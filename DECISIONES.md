@@ -103,7 +103,31 @@ El coste es que muchos presentes de 3ª persona singular no se marcan (`camina`,
 
 **Alternativa futura:** usar un diccionario morfológico completo (FreeLing, Spacy con modelo español). Implicaría abandonar el modelo de fichero único o hacer llamadas a una API especializada.
 
-### 4.3 Orden de prioridad entre tipos
+### 4.3 Desdoblamiento del pretérito indefinido en 3ª singular y resto
+
+**Decisión:** el tipo `indefinido` se divide en dos:
+- `indefinido3s` — 3ª persona del singular: *cantó*, *comió*, *fue*, *hizo*…
+- `indefinido` — el resto de personas: *canté*, *cantaste*, *cantaron*, *fuiste*, *fueron*…
+
+**Razón:** la 3ª persona del singular del indefinido es la forma narrativa dominante en la prosa literaria española. Cuando se acumula en párrafos cortos produce una cadencia monótona muy reconocible ("entró, miró, cogió, salió"). Al tener su propio color, el escritor puede ver de un vistazo si hay concentración de esa forma concreta, independientemente del resto de personas del mismo tiempo.
+
+**Implementación:**
+- En `VT`, `indefinido3s` aparece **antes** que `indefinido` (primer match gana). Su único sufijo es `'-ó'`.
+- En `IRR`, los irregulares de 3ª singular (*fue*, *hizo*, *vino*, *entró*…) pasan a `IRR.indefinido3s`. Los irregulares de otras personas (*fui*, *fuiste*, *fueron*…) quedan en `IRR.indefinido`.
+- `MIN_SYL_LEN.indefinido3s = 2` (el más bajo posible); el filtro de stem (`stem.length >= 2`) ya previene falsos positivos con palabras de dos letras.
+
+**Colores:** misma familia roja para mantener la relación visual, pero distinguibles:
+- `indefinido3s`: rojo puro (`#cc0000` / `rgba(210,0,0,0.30)`)
+- `indefinido`: rojo-naranja (`#b84000` / `rgba(190,60,0,0.24)`)
+
+### 4.4 Colores de tipos verbales (v3)
+
+Los colores originales de `VT` eran variantes de los colores estándar de Bootstrap/Material con opacidades bajas (0.14–0.20), lo que los hacía difíciles de distinguir en el texto. En v3 se revisaron todos para:
+1. Aumentar la saturación del color base (`color`, usado en borde inferior y chips).
+2. Aumentar la opacidad del fondo (`bg`, 0.22–0.32 según el tipo).
+3. Distribuir los tipos por el espectro de color para maximizar la distinción visual, con asociaciones semánticas aproximadas: rojo=pasado fuerte, naranja=pasado habitual, ámbar=estado pasado, azul=futuro, cian=condicional, púrpura=subjuntivo, verde-azulado=participio, magenta=gerundio, lima=infinitivo, verde=presente.
+
+### 4.5 Orden de prioridad entre tipos
 
 El orden en `VT` no es arbitrario. Casos conflictivos:
 
@@ -112,7 +136,7 @@ El orden en `VT` no es arbitrario. Casos conflictivos:
 - `-ando` puede ser gerundio (`cantando`) o nombre propio / sustantivo (`Fernando`, `mando`). El filtro de stem ayuda (`mand-` tiene vocal, `fernanánd-` también — esto es un límite del sistema).
 - `-ía` puede ser imperfecto (`tenía`) o sustantivo (`energía`, `alegría`). Los sufijos acentuados son más fiables que los sin acento porque los sustantivos rara vez llevan esa acentuación en esa posición.
 
-### 4.4 Stopwords: política de expansión
+### 4.6 Stopwords: política de expansión
 
 La lista `SW` tiene dos tipos de entradas:
 
@@ -158,13 +182,13 @@ Los rangos elegidos (1–3 / 4–8 / 9–15 / 16–25 / 26+) se basan en:
 - La intuición del propio escritor: una frase de 3 sílabas tiene un impacto diferente a una de 25, y esa diferencia debe ser visible de un vistazo.
 
 **Colores asignados:**
-- Rojo (1–3): máximo impacto, máxima brevedad.
-- Naranja (4–8): corta, ágil.
-- Verde (9–15): zona neutra, fluida.
-- Azul (16–25): larga pero manejable.
-- Morado (26+): muy larga, zona de riesgo de pérdida del lector.
+- Verde (1–3): máximo impacto, máxima brevedad. El verde frío contrasta sin connotar "peligro".
+- Lima/amarillo (4–8): corta, ágil.
+- Naranja (9–15): zona media — el naranja llama la atención pero sin alarmar.
+- Magenta (16–25): larga, empieza a ser llamativa.
+- Rojo (26+): muy larga, zona de riesgo de pérdida del lector.
 
-El verde para el rango "normal" es una convención de semáforo: no hay color neutro, pero el verde se percibe como "correcto" sin que destaque visualmente tanto como el rojo o el morado.
+**Decisión de paleta (v3):** los colores originales (rojo→naranja→verde→azul→morado) tenían opacidades muy bajas (0.14–0.16) que hacían los fondos casi imperceptibles, especialmente en pantallas brillantes. Se subió la opacidad (0.26–0.38) y se usaron colores más saturados, fuera de la paleta general de la UI, para que el marcado sea útil de un vistazo. La progresión ahora va de verde/frío (frases cortas) a rojo/cálido (frases largas), invirtiendo la convención de semáforo anterior pero ganando en visibilidad.
 
 ### 6.2 Toggle de proposiciones
 
@@ -291,3 +315,4 @@ Se usa `@media (prefers-color-scheme: dark)` con variables CSS. Sin JavaScript, 
 |---|---|---|
 | v1 | 30 mar 2026 | Primera versión funcional. Bug de markup en verbos. Falsos positivos masivos en sustantivos. |
 | v2 | 30 mar 2026 | Reescritura completa del renderizado. Arquitectura token-by-token. Expansión de SW y IRR. Toggle de proposiciones. |
+| v3 | 31 mar 2026 | Colores más saturados y visibles para frases y verbos. Desdoblamiento de `indefinido` en `indefinido3s` (3ª sing.) y `indefinido` (resto). |

@@ -67,11 +67,11 @@ Aplicadas como `<span class="fl-N">` en la vista "frases":
 
 | Clase | Rango | Color |
 |-------|-------|-------|
-| `.fl-1` | 1–3 sílabas | Rojo `rgba(192,57,43,0.16)` |
-| `.fl-2` | 4–8 sílabas | Naranja `rgba(211,84,0,0.14)` |
-| `.fl-3` | 9–15 sílabas | Verde `rgba(39,174,96,0.14)` |
-| `.fl-4` | 16–25 sílabas | Azul `rgba(41,128,185,0.16)` |
-| `.fl-5` | 26+ sílabas | Morado `rgba(142,68,173,0.15)` |
+| `.fl-1` | 1–3 sílabas | Verde `rgba(0,200,100,0.32)` |
+| `.fl-2` | 4–8 sílabas | Lima/amarillo `rgba(200,210,0,0.38)` |
+| `.fl-3` | 9–15 sílabas | Naranja `rgba(255,120,0,0.30)` |
+| `.fl-4` | 16–25 sílabas | Magenta `rgba(255,0,140,0.26)` |
+| `.fl-5` | 26+ sílabas | Rojo `rgba(200,0,30,0.28)` |
 
 ### Clases de marcado verbal
 
@@ -212,16 +212,17 @@ Array de 10 objetos, ordenados de más específico a más genérico. El orden im
 
 **Orden de los tipos (de más a menos específico):**
 
-1. `indefinido` — sufijos con tilde o con vocal temática clara: `-ó`, `-é`, `-aste`, `-iste`, `-asteis`, `-aron`, `-ieron`, `-imos`, `-isteis`.
-2. `imperfecto1` — sufijos con `-ab-` en la terminación, ordenados del más largo al más corto para evitar que `-aba` tape a `-ábamos`.
-3. `imperfecto23` — sufijos con `-í-` acentuada: `-íamos`, `-íais`, `-ían`, `-ías`, `-ía`. La tilde evita la mayoría de falsos positivos.
-4. `futuro` — sufijos con vocal temática + desinencia de futuro (siempre llevan tilde): `-aré`, `-erá`, etc.
-5. `condicional` — sufijos `-aría`, `-ería`, `-iría` y sus variantes.
-6. `subjuntivo` — sufijos de imperfecto de subjuntivo (`-ara`, `-era`, `-ase`, `-ese`) y sus variantes. Ambiguos con sustantivos; el filtro de stem ayuda.
-7. `participio` — sufijos `-ado/-ada/-ados/-adas`, `-ido/-ida/-idos/-idas`, más irregulares frecuentes (`-uerto`, `-ierto`, `-cho`, etc.).
-8. `gerundio` — sufijos `-ando`, `-iendo`, `-yendo` y sus variantes reflexivas.
-9. `infinitivo` — sufijos `-ar`, `-er`, `-ir` y sus variantes reflexivas. Los más cortos, se aplican con mínimo de longitud más alto.
-10. `presente` — solo formas plurales inequívocas: `-amos`, `-emos`, `-imos`, `-áis`, `-éis`, `-ís`. Los singulares son demasiado ambiguos.
+1. `indefinido3s` — 3ª persona del singular exclusivamente. Sufijo único `-ó`. Captura antes que `indefinido` para que las formas en `-ó` reciban su categoría propia. Irregulares: *fue*, *hizo*, *vino*, *entró*, *detuvo*…
+2. `indefinido` — resto de personas del pretérito indefinido: `-é`, `-aste`, `-iste`, `-asteis`, `-aron`, `-ieron`, `-imos`, `-isteis`. Irregulares: *fui*, *fuiste*, *fueron*, *hice*, *vine*…
+3. `imperfecto1` — sufijos con `-ab-` en la terminación, ordenados del más largo al más corto para evitar que `-aba` tape a `-ábamos`.
+4. `imperfecto23` — sufijos con `-í-` acentuada: `-íamos`, `-íais`, `-ían`, `-ías`, `-ía`. La tilde evita la mayoría de falsos positivos.
+5. `futuro` — sufijos con vocal temática + desinencia de futuro (siempre llevan tilde): `-aré`, `-erá`, etc.
+6. `condicional` — sufijos `-aría`, `-ería`, `-iría` y sus variantes.
+7. `subjuntivo` — sufijos de imperfecto de subjuntivo (`-ara`, `-era`, `-ase`, `-ese`) y sus variantes. Ambiguos con sustantivos; el filtro de stem ayuda.
+8. `participio` — sufijos `-ado/-ada/-ados/-adas`, `-ido/-ida/-idos/-idas`, más irregulares frecuentes (`-uerto`, `-ierto`, `-cho`, etc.).
+9. `gerundio` — sufijos `-ando`, `-iendo`, `-yendo` y sus variantes reflexivas.
+10. `infinitivo` — sufijos `-ar`, `-er`, `-ir` y sus variantes reflexivas. Los más cortos, se aplican con mínimo de longitud más alto.
+11. `presente` — solo formas plurales inequívocas: `-amos`, `-emos`, `-imos`, `-áis`, `-éis`, `-ís`. Los singulares son demasiado ambiguos.
 
 ---
 
@@ -229,7 +230,8 @@ Array de 10 objetos, ordenados de más específico a más genérico. El orden im
 
 ```javascript
 {
-  indefinido:   Set<string>,  // fue, hizo, dijo, trajo, miró, cruzó...
+  indefinido3s: Set<string>,  // fue, hizo, vio, entró, detuvo... (3ª singular)
+  indefinido:   Set<string>,  // fui, fuiste, fueron, hice, viniste... (resto)
   presente:     Set<string>,  // es, son, hay, ha, van, tiene, hace...
   imperfecto1:  Set<string>,  // estaba, llevaba, arrastraba...
   imperfecto23: Set<string>,  // era, tenía, había, podía...
@@ -260,6 +262,7 @@ Todos los tokens se normalizan a minúsculas antes de comparar con `SW`.
 
 ```javascript
 {
+  indefinido3s: 2,  // sufijo '-ó' es muy corto; el filtro de stem hace el resto
   indefinido: 3,    // 'fui' tiene 3 chars, es el más corto válido
   imperfecto1: 4,
   imperfecto23: 3,
@@ -338,6 +341,7 @@ Ejecuta todo el análisis local sobre el texto del textarea.
   nw:     number,           // número de palabras
   flesch: number,           // índice Flesch-Szigriszt (0–100)
   vbt:    {                 // verbos por tipo
+    indefinido3s: string[],
     indefinido:   string[],
     imperfecto1:  string[],
     imperfecto23: string[],
@@ -390,8 +394,8 @@ Actualiza el panel de distribución de longitud (solo visible en vista "frases")
 
 Constantes de presentación:
 ```javascript
-F_COLORS = ['#c0392b','#d35400','#27ae60','#2980b9','#8e44ad']
-F_BGS    = [fondos con transparencia paralelos a F_COLORS]
+F_COLORS = ['#00b850','#99a800','#ff6a00','#e6007a','#c0001e']
+F_BGS    = ['rgba(0,200,100,0.32)','rgba(200,210,0,0.38)','rgba(255,120,0,0.30)','rgba(255,0,140,0.26)','rgba(200,0,30,0.28)']
 F_LABELS = ['1–3 síl','4–8 síl','9–15 síl','16–25 síl','26+ síl']
 ```
 

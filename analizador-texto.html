@@ -42,11 +42,11 @@
   #textarea-input::placeholder { color:var(--ink3); font-style:italic; }
   .rendered-text { font-family:'Georgia',serif; font-size:17px; line-height:1.95; color:var(--ink); }
 
-  .fl-1 { background:rgba(192,57,43,0.16); border-radius:2px; }
-  .fl-2 { background:rgba(211,84,0,0.14); border-radius:2px; }
-  .fl-3 { background:rgba(39,174,96,0.14); border-radius:2px; }
-  .fl-4 { background:rgba(41,128,185,0.16); border-radius:2px; }
-  .fl-5 { background:rgba(142,68,173,0.15); border-radius:2px; }
+  .fl-1 { background:rgba(0,200,100,0.32); border-radius:2px; }
+  .fl-2 { background:rgba(200,210,0,0.38); border-radius:2px; }
+  .fl-3 { background:rgba(255,120,0,0.30); border-radius:2px; }
+  .fl-4 { background:rgba(255,0,140,0.26); border-radius:2px; }
+  .fl-5 { background:rgba(200,0,30,0.28); border-radius:2px; }
 
   .vm { border-radius:2px; padding:0 2px; cursor:default; position:relative; display:inline; }
   .vm:hover .tt { display:block; }
@@ -203,50 +203,53 @@ function splitPropositions(sent){
 
 // All verb type definitions ordered by specificity (most specific first)
 const VT = [
-  { key:'indefinido',  label:'Pret. indefinido',       color:'#e74c3c', bg:'rgba(231,76,60,0.2)',
-    suf:['ó','é','aste','iste','asteis','aron','ieron','imos','isteis'] },
-  { key:'imperfecto1', label:'Pret. imperf. 1ª (-aba)', color:'#e67e22', bg:'rgba(230,126,34,0.2)',
+  { key:'indefinido3s', label:'Pret. indef. 3ª sing.',  color:'#cc0000', bg:'rgba(210,0,0,0.30)',
+    suf:['ó'] },
+  { key:'indefinido',  label:'Pret. indefinido (resto)',color:'#b84000', bg:'rgba(190,60,0,0.24)',
+    suf:['é','aste','iste','asteis','aron','ieron','imos','isteis'] },
+  { key:'imperfecto1', label:'Pret. imperf. 1ª (-aba)', color:'#d45f00', bg:'rgba(255,110,0,0.25)',
     suf:['ábamos','abais','aban','abas','aba'] },
-  { key:'imperfecto23',label:'Pret. imperf. 2ª/3ª (-ía)',color:'#c8a000',bg:'rgba(200,160,0,0.18)',
+  { key:'imperfecto23',label:'Pret. imperf. 2ª/3ª (-ía)',color:'#a07800',bg:'rgba(240,190,0,0.32)',
     suf:['íamos','íais','ían','ías','ía'] },
-  { key:'futuro',      label:'Futuro',                 color:'#2980b9', bg:'rgba(41,128,185,0.18)',
+  { key:'futuro',      label:'Futuro',                 color:'#0055dd', bg:'rgba(0,100,255,0.22)',
     suf:['aremos','aréis','arán','arás','ará','eremos','eréis','erán','erás','erá','iremos','iréis','irán','irás','irá','aré','eré','iré'] },
-  { key:'condicional', label:'Condicional',            color:'#5d6d7e', bg:'rgba(93,109,126,0.18)',
+  { key:'condicional', label:'Condicional',            color:'#007aaa', bg:'rgba(0,180,230,0.25)',
     suf:['aríamos','aríais','arían','arías','aría','eríamos','eríais','erían','erías','ería','iríamos','iríais','irían','irías','iría'] },
-  { key:'subjuntivo',  label:'Subjuntivo',             color:'#8e44ad', bg:'rgba(142,68,173,0.16)',
+  { key:'subjuntivo',  label:'Subjuntivo',             color:'#8800cc', bg:'rgba(160,0,230,0.20)',
     suf:['ásemos','ésemos','áramos','éramos','áremos','éremos',
          'aseis','eseis','areis','ereis',
          'asen','esen','aren','eren',
          'ases','eses','ares','eres',
          'aras','eras','ara','era','ase','ese','are','ere'] },
-  { key:'participio',  label:'Participio',             color:'#16a085', bg:'rgba(22,160,133,0.18)',
+  { key:'participio',  label:'Participio',             color:'#007a55', bg:'rgba(0,200,140,0.26)',
     suf:['adas','idos','idas','ados','ada','ido','ida','ado',
          'uerto','ierto','iesto','rito','cho','sto','echa','echo'] },
-  { key:'gerundio',    label:'Gerundio',               color:'#c0392b', bg:'rgba(192,57,43,0.14)',
+  { key:'gerundio',    label:'Gerundio',               color:'#bb0077', bg:'rgba(230,0,160,0.22)',
     suf:['ándose','iéndose','yendo','ando','iendo'] },
-  { key:'infinitivo',  label:'Infinitivo',             color:'#7f8c8d', bg:'rgba(127,140,141,0.16)',
+  { key:'infinitivo',  label:'Infinitivo',             color:'#5a8800', bg:'rgba(150,220,0,0.28)',
     suf:['arse','erse','irse','ar','er','ir'] },
-  { key:'presente',    label:'Presente',               color:'#27ae60', bg:'rgba(39,174,96,0.16)',
+  { key:'presente',    label:'Presente',               color:'#007722', bg:'rgba(0,190,70,0.26)',
     suf:['amos','emos','imos','áis','éis','ís'] },
 ];
 
 // Irregular verb forms — explicit whitelist
 const IRR = {
-  indefinido: new Set(['fue','fui','fuiste','fuimos','fuisteis','fueron',
-    'vi','vio','viste','vimos','visteis','vieron',
-    'di','dio','diste','dimos','disteis','dieron',
-    'hice','hizo','hiciste','hicimos','hicisteis','hicieron',
-    'dije','dijo','dijiste','dijimos','dijisteis','dijeron',
-    'traje','trajo','trajiste','trajimos','trajisteis','trajeron',
-    'puse','puso','pusiste','pusimos','pusisteis','pusieron',
-    'tuve','tuvo','tuviste','tuvimos','tuvisteis','tuvieron',
-    'vine','vino','viniste','vinimos','vinisteis','vinieron',
-    'supe','supo','supiste','supimos','supisteis','supieron',
-    'quise','quiso','quisiste','quisimos','quisisteis','quisieron',
-    'anduve','anduvo','anduviste','anduvimos','anduvisteis','anduvieron',
+  indefinido3s: new Set(['fue','vio','dio','hizo','dijo','trajo','puso','tuvo','vino','supo','quiso','anduvo',
     'entró','salió','volvió','llegó','siguió','cayó','oyó','creyó',
     'durmió','murió','pidió','repitió','sintió','mintió',
     'miró','cruzó','arrastró','detuvo','devolvió']),
+  indefinido: new Set(['fui','fuiste','fuimos','fuisteis','fueron',
+    'vi','viste','vimos','visteis','vieron',
+    'di','diste','dimos','disteis','dieron',
+    'hice','hiciste','hicimos','hicisteis','hicieron',
+    'dije','dijiste','dijimos','dijisteis','dijeron',
+    'traje','trajiste','trajimos','trajisteis','trajeron',
+    'puse','pusiste','pusimos','pusisteis','pusieron',
+    'tuve','tuviste','tuvimos','tuvisteis','tuvieron',
+    'vine','viniste','vinimos','vinisteis','vinieron',
+    'supe','supiste','supimos','supisteis','supieron',
+    'quise','quisiste','quisimos','quisisteis','quisieron',
+    'anduve','anduviste','anduvimos','anduvisteis','anduvieron']),
   presente: new Set(['es','son','somos','sois','eres','hay','ha','han','has','hemos','habéis',
     'va','van','voy','vas','vais','vamos','sé','sabe','saben','sabemos','sabéis','sabes',
     'puede','pueden','puedo','puedes','podemos','podéis',
@@ -298,7 +301,7 @@ const SW = new Set([
 ]);
 
 // Minimum length per suffix type to reduce false positives
-const MIN_SYL_LEN = { indefinido:3, imperfecto1:4, imperfecto23:3, futuro:5, condicional:6,
+const MIN_SYL_LEN = { indefinido3s:2, indefinido:3, imperfecto1:4, imperfecto23:3, futuro:5, condicional:6,
   subjuntivo:4, participio:3, gerundio:5, infinitivo:3, presente:4 };
 
 function classifyToken(raw) {
@@ -367,8 +370,8 @@ function updateStats(){
   document.getElementById('st-fl').textContent=AD.flesch+' ·'+fl;
 }
 
-const F_COLORS=['#c0392b','#d35400','#27ae60','#2980b9','#8e44ad'];
-const F_BGS=['rgba(192,57,43,0.16)','rgba(211,84,0,0.14)','rgba(39,174,96,0.14)','rgba(41,128,185,0.16)','rgba(142,68,173,0.15)'];
+const F_COLORS=['#00b850','#99a800','#ff6a00','#e6007a','#c0001e'];
+const F_BGS=['rgba(0,200,100,0.32)','rgba(200,210,0,0.38)','rgba(255,120,0,0.30)','rgba(255,0,140,0.26)','rgba(200,0,30,0.28)'];
 const F_LABELS=['1–3 síl','4–8 síl','9–15 síl','16–25 síl','26+ síl'];
 
 function updateFrPanel(){
