@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analizador de Prosa</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f5f2ec; --bg2: #ede9e1;
+    --ink: #1a1714; --ink2: #4a4540; --ink3: #8a837a;
+    --accent: #8b3a1e; --accent2: #c9531f;
+    --border: rgba(26,23,20,0.12); --border2: rgba(26,23,20,0.22);
+    --panel: #faf8f4;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg:#1a1714; --bg2:#221f1b;
+      --ink:#ede9e1; --ink2:#b8b2a8; --ink3:#7a7570;
+      --accent:#d4623a; --accent2:#e8845a;
+      --border:rgba(237,233,225,0.1); --border2:rgba(237,233,225,0.2);
+      --panel:#1e1b18;
+    }
+  }
+  body { font-family:'Georgia',serif; background:var(--bg); color:var(--ink); min-height:100vh; display:flex; flex-direction:column; }
+  header { background:var(--bg2); border-bottom:1px solid var(--border2); padding:13px 22px; display:flex; align-items:baseline; gap:14px; }
+  header h1 { font-size:19px; font-weight:400; font-style:italic; color:var(--accent); }
+  header p { font-size:11px; color:var(--ink3); font-family:sans-serif; }
+  .layout { display:grid; grid-template-columns:1fr 310px; flex:1; min-height:0; height:calc(100vh - 46px); }
+  .editor-area { display:flex; flex-direction:column; border-right:1px solid var(--border); min-height:0; }
+  .toolbar { display:flex; align-items:center; gap:7px; padding:6px 16px; background:var(--bg2); border-bottom:1px solid var(--border); flex-wrap:wrap; flex-shrink:0; }
+  .tool-label { font-family:sans-serif; font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--ink3); }
+  .toggle-btn { padding:3px 10px; font-size:11px; font-family:sans-serif; border:1px solid var(--border2); border-radius:20px; background:transparent; color:var(--ink2); cursor:pointer; transition:all 0.15s; }
+  .toggle-btn:hover { border-color:var(--ink3); }
+  .toggle-btn.on { background:var(--accent); color:#fff; border-color:var(--accent); }
+  .tabs { display:flex; background:var(--bg2); border-bottom:1px solid var(--border); padding:0 16px; flex-shrink:0; }
+  .tab { padding:8px 13px; font-family:sans-serif; font-size:10px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:var(--ink3); cursor:pointer; border-bottom:2px solid transparent; transition:all 0.2s; }
+  .tab.active { color:var(--accent); border-bottom-color:var(--accent); }
+  .editor-pane { flex:1; padding:20px 24px; display:none; overflow-y:auto; min-height:0; }
+  .editor-pane.active { display:block; }
+  #textarea-input { width:100%; min-height:100%; background:transparent; border:none; outline:none; font-family:'Georgia',serif; font-size:17px; line-height:1.85; color:var(--ink); resize:none; caret-color:var(--accent); }
+  #textarea-input::placeholder { color:var(--ink3); font-style:italic; }
+  .rendered-text { font-family:'Georgia',serif; font-size:17px; line-height:1.95; color:var(--ink); }
+
+  .fl-1 { background:rgba(192,57,43,0.16); border-radius:2px; }
+  .fl-2 { background:rgba(211,84,0,0.14); border-radius:2px; }
+  .fl-3 { background:rgba(39,174,96,0.14); border-radius:2px; }
+  .fl-4 { background:rgba(41,128,185,0.16); border-radius:2px; }
+  .fl-5 { background:rgba(142,68,173,0.15); border-radius:2px; }
+
+  .vm { border-radius:2px; padding:0 2px; cursor:default; position:relative; display:inline; }
+  .vm:hover .tt { display:block; }
+  .tt { display:none; position:absolute; bottom:calc(100% + 3px); left:50%; transform:translateX(-50%);
+    background:var(--ink); color:var(--bg); font-family:sans-serif; font-size:10px; padding:2px 6px;
+    border-radius:3px; white-space:nowrap; pointer-events:none; z-index:300; }
+
+  .sidebar { background:var(--panel); overflow-y:auto; display:flex; flex-direction:column; border-left:1px solid var(--border); }
+  .sidebar-section { padding:14px 16px; border-bottom:1px solid var(--border); }
+  .sidebar-section h3 { font-family:sans-serif; font-size:9px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--ink3); margin-bottom:9px; }
+  .stat-row { display:flex; justify-content:space-between; padding:3px 0; font-family:sans-serif; }
+  .stat-row .label { font-size:12px; color:var(--ink2); }
+  .stat-row .val { font-size:12px; font-family:monospace; color:var(--ink); }
+  .legend-item { display:flex; align-items:center; gap:6px; padding:3px 0; font-family:sans-serif; font-size:11px; color:var(--ink2); }
+  .legend-dot { width:10px; height:10px; border-radius:2px; flex-shrink:0; }
+  .legend-count { margin-left:auto; font-family:monospace; font-size:10px; color:var(--ink3); }
+  .sparkbar { width:100%; height:28px; display:flex; gap:2px; margin:7px 0 3px; align-items:flex-end; }
+  .sparkbar-col { flex:1; border-radius:2px 2px 0 0; min-height:2px; }
+  .btn-analyze { display:block; margin:0 0 12px; padding:8px 12px; background:var(--accent); color:#fff; border:none; border-radius:4px; font-family:sans-serif; font-size:12px; font-weight:700; cursor:pointer; transition:background 0.2s; width:100%; }
+  .btn-analyze:hover { background:var(--accent2); }
+  .btn-analyze:disabled { background:var(--ink3); cursor:not-allowed; }
+  .error-item { padding:7px 8px; border-left:3px solid var(--accent); background:rgba(139,58,30,0.06); margin-bottom:5px; border-radius:0 3px 3px 0; }
+  .etype { font-family:sans-serif; font-size:9px; letter-spacing:0.5px; text-transform:uppercase; color:var(--ink3); margin-bottom:2px; }
+  .efrag { font-size:13px; font-weight:bold; }
+  .esug { font-family:sans-serif; font-size:12px; color:#27ae60; margin-top:2px; }
+  .enota { font-family:sans-serif; font-size:11px; color:var(--ink3); margin-top:2px; }
+  .empty-state { font-family:sans-serif; font-size:11px; color:var(--ink3); font-style:italic; padding:4px 0; }
+  .vgroup-title { font-family:sans-serif; font-size:9px; font-weight:700; letter-spacing:0.8px; text-transform:uppercase; margin:8px 0 3px; padding:2px 6px; border-radius:3px; }
+  .vchips { display:flex; flex-wrap:wrap; gap:3px; margin-bottom:4px; }
+  .vchip { font-family:'Georgia',serif; font-size:12px; padding:1px 7px; border-radius:20px; }
+  .api-notice { font-family:sans-serif; font-size:10px; color:var(--ink3); padding:4px 7px; background:rgba(139,58,30,0.07); border-radius:3px; margin-bottom:8px; }
+  .spinner { display:inline-block; width:11px; height:11px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:spin 0.7s linear infinite; vertical-align:middle; margin-right:4px; }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  .seg-label { font-family:sans-serif; font-size:11px; color:var(--ink2); display:flex; align-items:center; gap:5px; margin-left:auto; }
+  .seg-label input { accent-color:var(--accent); cursor:pointer; }
+  ::-webkit-scrollbar { width:4px; } ::-webkit-scrollbar-thumb { background:var(--border2); border-radius:2px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Analizador de Prosa</h1>
+  <p>análisis estilístico · castellano</p>
+</header>
+<div class="layout">
+  <div class="editor-area">
+    <div class="toolbar">
+      <span class="tool-label">Vista</span>
+      <button class="toggle-btn on" id="btn-plain" onclick="setView('plain')">Texto</button>
+      <button class="toggle-btn" id="btn-frases" onclick="setView('frases')">Longitud frases</button>
+      <button class="toggle-btn" id="btn-verbos" onclick="setView('verbos')">Verbos</button>
+      <label class="seg-label" id="lbl-seg" style="display:none">
+        <input type="checkbox" id="chk-seg" onchange="renderView()"> Separar proposiciones
+      </label>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="switchTab('input')">Editar</div>
+      <div class="tab" onclick="switchTab('rendered')">Analizado</div>
+    </div>
+    <div class="editor-pane active" id="pane-input">
+      <textarea id="textarea-input" placeholder="Pega o escribe tu texto aquí…" oninput="onTextChange()"></textarea>
+    </div>
+    <div class="editor-pane" id="pane-rendered">
+      <div id="rendered-text" class="rendered-text"></div>
+    </div>
+  </div>
+  <div class="sidebar">
+    <div class="sidebar-section">
+      <h3>Estadísticas</h3>
+      <div class="stat-row"><span class="label">Palabras</span><span class="val" id="st-w">—</span></div>
+      <div class="stat-row"><span class="label">Frases</span><span class="val" id="st-s">—</span></div>
+      <div class="stat-row"><span class="label">Sílabas totales</span><span class="val" id="st-sy">—</span></div>
+      <div class="stat-row"><span class="label">Síl./frase (media)</span><span class="val" id="st-av">—</span></div>
+      <div class="stat-row"><span class="label">Flesch-Szigriszt</span><span class="val" id="st-fl">—</span></div>
+    </div>
+    <div class="sidebar-section" id="sec-fr" style="display:none">
+      <h3>Distribución longitud</h3>
+      <div class="sparkbar" id="spark"></div>
+      <div id="leg-fr"></div>
+      <p style="font-family:sans-serif;font-size:9px;color:var(--ink3);margin-top:5px">clusters: 1–3 · 4–8 · 9–15 · 16–25 · 26+ sílabas</p>
+    </div>
+    <div class="sidebar-section" id="sec-vb" style="display:none">
+      <h3>Verbos por forma</h3>
+      <div id="verb-panel"></div>
+    </div>
+    <div class="sidebar-section" id="sec-ort">
+      <h3>Ortografía y gramática</h3>
+      <div class="api-notice">Análisis mediante API de Claude</div>
+      <button class="btn-analyze" id="btn-ort" onclick="runOrtografia()">Analizar texto</button>
+      <div id="ort-result"><p class="empty-state">Aún no analizado</p></div>
+    </div>
+  </div>
+</div>
+<script>
+const SAMPLE = `Velilla entró en la habitación detrás de su bastón. A su espalda, los mercenarios nevios se quedaron en el umbral, apoyados en el marco, observando a las presas que llevaban acechando hace rato: Lucilda con el bebé en brazos, Guzmán con la espalda en la pared. El viejo cruzó la estancia despacio, sin apartar los ojos del muchacho. Arrastraba los pies con esa parsimonia de quien ha dejado de tener prisa porque sabe que el tiempo, a cierta edad, ya no corre sino que camina a su lado. Se detuvo a un paso de Guzmán. Lo miró. Guzmán le devolvió la mirada sin moverse.`;
+
+document.getElementById('textarea-input').value = SAMPLE;
+let currentView = 'plain';
+let AD = null; // analysis data
+
+// ══════════════════════════════════════════════════════
+//  SYLLABLE COUNTER
+// ══════════════════════════════════════════════════════
+function sylCount(word) {
+  word = word.toLowerCase().replace(/[^a-záéíóúüñ]/g,'');
+  if (!word) return 0;
+  const V='aeiouáéíóúü', STRONG='aeoáéó', ACC_WEAK='íú';
+  const DIPH=new Set(['ia','ie','io','iu','ua','ue','ui','uo',
+    'ai','ei','oi','au','eu','ou','ái','éi','ói','áu','éu',
+    'iá','ié','ió','uá','ué','uó']);
+  const TRIPH=new Set(['iai','iei','uai','uei','uau','iau']);
+  let c=0,i=0;
+  while(i<word.length){
+    if(V.includes(word[i])){
+      if(i+2<word.length&&TRIPH.has(word.slice(i,i+3))){c++;i+=3;}
+      else if(i+1<word.length&&V.includes(word[i+1])){
+        const p=word.slice(i,i+2);
+        const hiato=(STRONG.includes(word[i])&&STRONG.includes(word[i+1]))
+          ||word[i]===word[i+1]||ACC_WEAK.includes(word[i+1])||ACC_WEAK.includes(word[i]);
+        if(hiato){c++;i++;}
+        else if(DIPH.has(p)){c++;i+=2;}
+        else{c++;i++;}
+      }else{c++;i++;}
+    }else i++;
+  }
+  return c||1;
+}
+
+function segSyl(seg){ return seg.trim().split(/\s+/).filter(Boolean).reduce((s,w)=>s+sylCount(w),0); }
+function sylClass(n){ return n<=3?1:n<=8?2:n<=15?3:n<=25?4:5; }
+
+// ══════════════════════════════════════════════════════
+//  SENTENCE & PROPOSITION SPLITTING
+// ══════════════════════════════════════════════════════
+function splitSentences(text){
+  return text.split(/(?<=[.!?…]+)\s+/).map(s=>s.trim()).filter(Boolean);
+}
+
+function splitPropositions(sent){
+  // split on , ; : — – preserving delimiter with left part
+  const parts = sent.split(/([,;:\u2014\u2013])/);
+  const segs=[];
+  let cur='';
+  for(let i=0;i<parts.length;i++){
+    if(/^[,;:\u2014\u2013]$/.test(parts[i])){cur+=parts[i];if(cur.replace(/[,;:\u2014\u2013\s]/g,''))segs.push(cur);cur='';}
+    else cur+=parts[i];
+  }
+  if(cur.replace(/[,;:\u2014\u2013\s]/g,''))segs.push(cur);
+  return segs.length?segs:[sent];
+}
+
+// ══════════════════════════════════════════════════════
+//  VERB DETECTION  — token-level, no regex on HTML
+// ══════════════════════════════════════════════════════
+
+// All verb type definitions ordered by specificity (most specific first)
+const VT = [
+  { key:'indefinido',  label:'Pret. indefinido',       color:'#e74c3c', bg:'rgba(231,76,60,0.2)',
+    suf:['ó','é','aste','iste','asteis','aron','ieron','imos','isteis'] },
+  { key:'imperfecto1', label:'Pret. imperf. 1ª (-aba)', color:'#e67e22', bg:'rgba(230,126,34,0.2)',
+    suf:['ábamos','abais','aban','abas','aba'] },
+  { key:'imperfecto23',label:'Pret. imperf. 2ª/3ª (-ía)',color:'#c8a000',bg:'rgba(200,160,0,0.18)',
+    suf:['íamos','íais','ían','ías','ía'] },
+  { key:'futuro',      label:'Futuro',                 color:'#2980b9', bg:'rgba(41,128,185,0.18)',
+    suf:['aremos','aréis','arán','arás','ará','eremos','eréis','erán','erás','erá','iremos','iréis','irán','irás','irá','aré','eré','iré'] },
+  { key:'condicional', label:'Condicional',            color:'#5d6d7e', bg:'rgba(93,109,126,0.18)',
+    suf:['aríamos','aríais','arían','arías','aría','eríamos','eríais','erían','erías','ería','iríamos','iríais','irían','irías','iría'] },
+  { key:'subjuntivo',  label:'Subjuntivo',             color:'#8e44ad', bg:'rgba(142,68,173,0.16)',
+    suf:['ásemos','ésemos','áramos','éramos','áremos','éremos',
+         'aseis','eseis','areis','ereis',
+         'asen','esen','aren','eren',
+         'ases','eses','ares','eres',
+         'aras','eras','ara','era','ase','ese','are','ere'] },
+  { key:'participio',  label:'Participio',             color:'#16a085', bg:'rgba(22,160,133,0.18)',
+    suf:['adas','idos','idas','ados','ada','ido','ida','ado',
+         'uerto','ierto','iesto','rito','cho','sto','echa','echo'] },
+  { key:'gerundio',    label:'Gerundio',               color:'#c0392b', bg:'rgba(192,57,43,0.14)',
+    suf:['ándose','iéndose','yendo','ando','iendo'] },
+  { key:'infinitivo',  label:'Infinitivo',             color:'#7f8c8d', bg:'rgba(127,140,141,0.16)',
+    suf:['arse','erse','irse','ar','er','ir'] },
+  { key:'presente',    label:'Presente',               color:'#27ae60', bg:'rgba(39,174,96,0.16)',
+    suf:['amos','emos','imos','áis','éis','ís'] },
+];
+
+// Irregular verb forms — explicit whitelist
+const IRR = {
+  indefinido: new Set(['fue','fui','fuiste','fuimos','fuisteis','fueron',
+    'vi','vio','viste','vimos','visteis','vieron',
+    'di','dio','diste','dimos','disteis','dieron',
+    'hice','hizo','hiciste','hicimos','hicisteis','hicieron',
+    'dije','dijo','dijiste','dijimos','dijisteis','dijeron',
+    'traje','trajo','trajiste','trajimos','trajisteis','trajeron',
+    'puse','puso','pusiste','pusimos','pusisteis','pusieron',
+    'tuve','tuvo','tuviste','tuvimos','tuvisteis','tuvieron',
+    'vine','vino','viniste','vinimos','vinisteis','vinieron',
+    'supe','supo','supiste','supimos','supisteis','supieron',
+    'quise','quiso','quisiste','quisimos','quisisteis','quisieron',
+    'anduve','anduvo','anduviste','anduvimos','anduvisteis','anduvieron',
+    'entró','salió','volvió','llegó','siguió','cayó','oyó','creyó',
+    'durmió','murió','pidió','repitió','sintió','mintió',
+    'miró','cruzó','arrastró','detuvo','devolvió']),
+  presente: new Set(['es','son','somos','sois','eres','hay','ha','han','has','hemos','habéis',
+    'va','van','voy','vas','vais','vamos','sé','sabe','saben','sabemos','sabéis','sabes',
+    'puede','pueden','puedo','puedes','podemos','podéis',
+    'quiere','quieren','quiero','quieres','queremos','queréis',
+    'tiene','tienen','tengo','tienes','tenemos','tenéis',
+    'dice','dicen','digo','dices','decimos','decís',
+    'hace','hacen','hago','haces','hacemos','hacéis',
+    've','ven','veo','ves','vemos','veis',
+    'viene','vienen','vengo','vienes','venimos','venís',
+    'pone','ponen','pongo','pones','ponemos','ponéis']),
+  imperfecto1: new Set(['estaba','estabas','estábamos','estabais','estaban',
+    'llevaba','llevabas','llevaban','miraba','mirabas','miraban',
+    'hablaba','pensaba','arrastraba']),
+  imperfecto23: new Set(['era','eras','éramos','erais','eran',
+    'tenía','tenías','teníamos','teníais','tenían',
+    'había','habías','habíamos','habíais','habían',
+    'podía','podías','podían','quería','querías','querían',
+    'sabía','sabías','sabían','veía','veías','veían',
+    'venía','venías','venían','hacía','hacías','hacían',
+    'vivía','vivías','vivían','sentía','sentías','sentían',
+    'decía','decías','decían','traía','traías','traían']),
+};
+
+// Hard stopword list — anything here is NEVER a verb
+const SW = new Set([
+  'el','la','los','las','un','una','unos','unas','del','al',
+  'con','por','para','sin','sobre','desde','hasta','bajo','ante','tras',
+  'en','de','a','y','o','u','e','que','si','se','me','te','le','nos','os','lo','les',
+  'mas','pero','sino','aunque','como','cuando','donde','quien','cual','cuya','cuyo',
+  'muy','tan','bien','mal','ya','aún','más','menos','todo','todos','toda','todas',
+  'este','esta','estos','estas','ese','esa','esos','esas','aquel','aquella','aquellos','aquellas',
+  'mi','tu','su','mis','tus','sus','nuestro','nuestra','vuestro','vuestra',
+  'no','ni','sí','también','tampoco','pues','porque','antes','después','luego',
+  'entonces','así','aquí','allí','allá','ahí','hoy','ayer','siempre','nunca','jamás',
+  'quizás','algo','nada','nadie','alguien','cada','otro','otra','otros','otras',
+  // false positives — nouns/adjectives that match verb suffixes
+  'espalda','bastón','habitación','umbral','estancia','mercenarios','mercenario',
+  'parsimonia','presas','presa','brazos','brazo','pared','marco','bastón','muchacho',
+  'nevios','nevio','bebé','edad','tiempo','lado','paso','mirada','ojos','pies',
+  'rato','entrada','ventana','puerta','mesa','silla','suelo','techo','calle',
+  'mundo','tierra','agua','fuego','aire','luz','noche','día','tarde','mañana',
+  'casa','lugar','momento','vez','veces','parte','partes','modo','forma',
+  'era','eras','sido','estar','ser','haber',
+  'primera','segundo','tercera','cualquiera','madera','barrera','cartera','manera',
+  'vida','comida','salida','medida','herida','partida','guarida',
+  'ruido','apellido','sentido','pedido',
+  // proper names
+  'lucilda','guzmán','velilla','escroc','karquia','reinor','guzmán',
+]);
+
+// Minimum length per suffix type to reduce false positives
+const MIN_SYL_LEN = { indefinido:3, imperfecto1:4, imperfecto23:3, futuro:5, condicional:6,
+  subjuntivo:4, participio:3, gerundio:5, infinitivo:3, presente:4 };
+
+function classifyToken(raw) {
+  const t = raw.toLowerCase().replace(/[^a-záéíóúüñ]/g,'');
+  if (t.length < 2) return null;
+  if (SW.has(t)) return null;
+
+  // 1. Check explicit irregulars
+  for (const [key,set] of Object.entries(IRR)) {
+    if (set.has(t)) return key;
+  }
+
+  // 2. Check suffix patterns — ordered most-specific first
+  for (const vt of VT) {
+    const minLen = MIN_SYL_LEN[vt.key] || 3;
+    if (t.length < minLen + 1) continue;
+    for (const suf of vt.suf) {
+      if (t.length > suf.length + 1 && t.endsWith(suf)) {
+        const stem = t.slice(0, t.length - suf.length);
+        // stem must have at least 2 chars and contain a vowel (ensures it's a real stem)
+        if (stem.length >= 2 && /[aeiouáéíóúü]/.test(stem)) return vt.key;
+      }
+    }
+  }
+  return null;
+}
+
+// Tokenizer: splits into {text, isWord} preserving everything
+function tokenize(text) {
+  const rx = /([a-záéíóúüñA-ZÁÉÍÓÚÜÑ]+(?:[-'][a-záéíóúüñA-ZÁÉÍÓÚÜÑ]+)*)|([^a-záéíóúüñA-ZÁÉÍÓÚÜÑ]+)/g;
+  const toks = []; let m;
+  while ((m = rx.exec(text)) !== null) toks.push({ text:m[0], isWord:!!m[1] });
+  return toks;
+}
+
+// ══════════════════════════════════════════════════════
+//  ANALYSIS
+// ══════════════════════════════════════════════════════
+function analyze() {
+  const text = document.getElementById('textarea-input').value;
+  if (!text.trim()) return null;
+  const sents = splitSentences(text);
+  const syls = sents.map(segSyl);
+  const dist = [0,0,0,0,0]; syls.forEach(n=>dist[sylClass(n)-1]++);
+  const words = text.split(/\s+/).filter(Boolean);
+  const totSyl = words.reduce((s,w)=>s+sylCount(w),0);
+  const avg = sents.length ? (totSyl/sents.length).toFixed(1) : 0;
+  const flesch = Math.max(0,Math.min(100,Math.round(206.84-0.60*(totSyl/words.length*10)-1.02*(sents.length/words.length*100))));
+  const vbt = {}; VT.forEach(v=>vbt[v.key]=[]);
+  tokenize(text).forEach(t=>{ if(!t.isWord)return; const k=classifyToken(t.text); if(k)vbt[k].push(t.text); });
+  return { sents, syls, dist, totSyl, avg, nw:words.length, flesch, vbt };
+}
+
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+// ══════════════════════════════════════════════════════
+//  STATS & PANEL UPDATES
+// ══════════════════════════════════════════════════════
+function updateStats(){
+  if(!AD)return;
+  const fl = AD.flesch>=75?' fácil':AD.flesch>=50?' normal':' difícil';
+  document.getElementById('st-w').textContent=AD.nw;
+  document.getElementById('st-s').textContent=AD.sents.length;
+  document.getElementById('st-sy').textContent=AD.totSyl;
+  document.getElementById('st-av').textContent=AD.avg;
+  document.getElementById('st-fl').textContent=AD.flesch+' ·'+fl;
+}
+
+const F_COLORS=['#c0392b','#d35400','#27ae60','#2980b9','#8e44ad'];
+const F_BGS=['rgba(192,57,43,0.16)','rgba(211,84,0,0.14)','rgba(39,174,96,0.14)','rgba(41,128,185,0.16)','rgba(142,68,173,0.15)'];
+const F_LABELS=['1–3 síl','4–8 síl','9–15 síl','16–25 síl','26+ síl'];
+
+function updateFrPanel(){
+  if(!AD)return;
+  const max=Math.max(...AD.dist,1);
+  document.getElementById('spark').innerHTML=AD.dist.map((d,i)=>
+    `<div class="sparkbar-col" style="background:${F_COLORS[i]};height:${Math.round((d/max)*26)+2}px"></div>`).join('');
+  document.getElementById('leg-fr').innerHTML=AD.dist.map((d,i)=>
+    `<div class="legend-item"><div class="legend-dot" style="background:${F_BGS[i]};border:1.5px solid ${F_COLORS[i]}"></div><span>${F_LABELS[i]}</span><span class="legend-count">${d}</span></div>`).join('');
+}
+
+function updateVbPanel(){
+  if(!AD)return;
+  let html='';
+  VT.forEach(vt=>{
+    const list=[...new Set(AD.vbt[vt.key])];
+    if(!list.length)return;
+    html+=`<div class="vgroup-title" style="color:${vt.color};background:${vt.bg}">${vt.label}</div>`;
+    html+=`<div class="vchips">${list.map(v=>`<span class="vchip" style="background:${vt.bg};color:${vt.color}">${esc(v)}</span>`).join('')}</div>`;
+  });
+  document.getElementById('verb-panel').innerHTML=html||'<p class="empty-state">No se detectaron verbos</p>';
+}
+
+// ══════════════════════════════════════════════════════
+//  RENDER
+// ══════════════════════════════════════════════════════
+function renderView(){
+  const text=document.getElementById('textarea-input').value;
+  const el=document.getElementById('rendered-text');
+  if(!text||!AD){el.textContent=text;return;}
+
+  if(currentView==='plain'){el.textContent=text;return;}
+
+  if(currentView==='frases'){
+    const useProp=document.getElementById('chk-seg').checked;
+    let html='';
+    AD.sents.forEach((sent,si)=>{
+      const segs=useProp?splitPropositions(sent):[sent];
+      segs.forEach(seg=>{
+        const n=segSyl(seg), cl=sylClass(n);
+        html+=`<span class="fl-${cl}" title="${n} sílabas">${esc(seg)}</span>`;
+      });
+      html+=' ';
+    });
+    el.innerHTML=html;
+    return;
+  }
+
+  if(currentView==='verbos'){
+    // Build HTML token-by-token — never run regex on HTML strings
+    let html='';
+    tokenize(text).forEach(tok=>{
+      if(!tok.isWord){html+=esc(tok.text);return;}
+      const key=classifyToken(tok.text);
+      if(!key){html+=esc(tok.text);return;}
+      const vt=VT.find(v=>v.key===key);
+      html+=`<span class="vm" style="background:${vt.bg};border-bottom:1.5px solid ${vt.color}"><span class="tt">${vt.label}</span>${esc(tok.text)}</span>`;
+    });
+    el.innerHTML=html;
+    return;
+  }
+}
+
+// ══════════════════════════════════════════════════════
+//  VIEW / TAB CONTROL
+// ══════════════════════════════════════════════════════
+function setView(v){
+  currentView=v;
+  ['plain','frases','verbos'].forEach(n=>document.getElementById('btn-'+n).classList.toggle('on',n===v));
+  document.getElementById('sec-fr').style.display=(v==='frases')?'block':'none';
+  document.getElementById('sec-vb').style.display=(v==='verbos')?'block':'none';
+  document.getElementById('lbl-seg').style.display=(v==='frases')?'flex':'none';
+  if(v!=='plain'){
+    AD=analyze(); updateStats();
+    if(v==='frases')updateFrPanel();
+    if(v==='verbos')updateVbPanel();
+    renderView(); switchTab('rendered');
+  }else switchTab('input');
+}
+
+function switchTab(tab){
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',(i===0&&tab==='input')||(i===1&&tab==='rendered')));
+  document.getElementById('pane-input').classList.toggle('active',tab==='input');
+  document.getElementById('pane-rendered').classList.toggle('active',tab==='rendered');
+  if(tab==='rendered'){AD=analyze();updateStats();renderView();}
+}
+
+function onTextChange(){AD=analyze();updateStats();if(currentView!=='plain')renderView();}
+
+// ══════════════════════════════════════════════════════
+//  ORTOGRAFÍA (API)
+// ══════════════════════════════════════════════════════
+async function runOrtografia(){
+  const text=document.getElementById('textarea-input').value.trim();
+  if(!text)return;
+  const btn=document.getElementById('btn-ort');
+  const res=document.getElementById('ort-result');
+  btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Analizando…'; res.innerHTML='';
+  try{
+    const r=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:'claude-sonnet-4-20250514',max_tokens:1000,
+        system:`Eres un corrector de estilo literario en castellano. Analiza el texto e identifica: errores ortográficos, gramaticales, de concordancia, de puntuación, y repetición léxica excesiva en proximidad.
+Responde SOLO con JSON válido sin backticks ni texto adicional:
+{"errores":[{"tipo":"ortografía|gramática|puntuación|concordancia|repetición","fragmento":"texto original","sugerencia":"corrección","nota":"explicación"}],"resumen":"frase resumen general"}
+Si no hay errores: {"errores":[],"resumen":"Sin errores detectados"}`,
+        messages:[{role:'user',content:text}]
+      })
+    });
+    const data=await r.json();
+    const raw=data.content.map(b=>b.text||'').join('').replace(/```json|```/g,'').trim();
+    let parsed; try{parsed=JSON.parse(raw);}catch(e){res.innerHTML='<p class="empty-state">Respuesta no parseable.</p>';return;}
+    if(!parsed.errores.length){
+      res.innerHTML=`<div style="color:#27ae60;font-family:sans-serif;font-size:12px;padding:5px 0">✓ ${esc(parsed.resumen)}</div>`;return;
+    }
+    let html=`<div style="font-family:sans-serif;font-size:10px;color:var(--ink3);margin-bottom:7px">${esc(parsed.resumen)}</div>`;
+    parsed.errores.forEach(e=>{
+      html+=`<div class="error-item"><div class="etype">${esc(e.tipo)}</div><div class="efrag">«${esc(e.fragmento)}»</div><div class="esug">→ ${esc(e.sugerencia)}</div><div class="enota">${esc(e.nota)}</div></div>`;
+    });
+    res.innerHTML=html;
+  }catch(err){res.innerHTML='<p class="empty-state">Error al conectar con la API.</p>';}
+  finally{btn.disabled=false;btn.textContent='Analizar texto';}
+}
+
+// Init
+AD=analyze();updateStats();
+</script>
+</body>
+</html>
