@@ -1,0 +1,90 @@
+# Analizador de Prosa
+
+Herramienta de análisis estilístico para prosa literaria en castellano. Diseñada para escritores que quieren retroalimentación visual sobre ritmo, tiempos verbales y legibilidad de su texto.
+
+## Instalación
+
+Descarga el fichero `analizador-texto.html` y ábrelo en cualquier navegador moderno (Chrome, Firefox, Safari, Edge). No requiere instalación, servidor ni conexión a internet para el análisis local.
+
+> En versiones futuras puede que se añadan ficheros adicionales (diccionarios, módulos). Por ahora, un solo fichero es suficiente.
+
+## Uso
+
+### Escribir o pegar texto
+
+Escribe directamente en el área de texto o pega tu texto desde cualquier editor. El texto se guarda automáticamente en el navegador: si recargas la página, recuperas lo que estabas trabajando.
+
+### Vistas de análisis
+
+La barra superior tiene tres modos. Cambia entre ellos en cualquier momento; el texto original no se altera.
+
+#### Texto
+
+Vista limpia, sin marcado. Modo de edición por defecto.
+
+#### Longitud de frases
+
+Colorea cada frase según su número de sílabas:
+
+| Color | Rango | Lectura |
+|---|---|---|
+| Verde | 1–3 sílabas | Muy corta, impacto máximo |
+| Lima | 4–8 sílabas | Corta, ágil |
+| Naranja | 9–15 sílabas | Media, zona de confort |
+| Magenta | 16–25 sílabas | Larga, exige atención |
+| Rojo | 26+ sílabas | Muy larga, riesgo de pérdida |
+
+El panel lateral muestra la distribución con una barra y los recuentos por categoría.
+
+**Separar proposiciones:** activa el checkbox para colorear también por cláusulas (comas, puntos y coma, rayas), no solo por frases completas. Útil para ver el ritmo interno de las frases largas.
+
+#### Verbos
+
+Colorea cada verbo detectado según su forma. Pasa el ratón sobre cualquier verbo para ver la etiqueta de la categoría. El panel lateral lista todos los verbos encontrados agrupados por forma.
+
+| Color | Forma verbal |
+|---|---|
+| Rojo | Pret. indefinido 3ª sing. (*entró*, *miró*, *dijo*) |
+| Azul oscuro | Pret. indefinido resto (*canté*, *fueron*, *viniste*) |
+| Naranja | Pret. imperfecto 1ª conj. (*caminaba*, *esperaban*) |
+| Verde | Pret. imperfecto 2ª/3ª conj. (*tenía*, *podían*) |
+| Azul | Futuro (*llegará*, *haremos*) |
+| Cian | Condicional (*querría*, *podría*) |
+| Púrpura | Subjuntivo (*fuera*, *hubiera*, *hiciese*) |
+| Verde azulado | Participio (*dicho*, *cantado*, *abierto*) |
+| Magenta | Gerundio (*corriendo*, *habiéndose*) |
+| Lima | Infinitivo (*correr*, *hablar*) |
+| Verde oscuro | Presente (*somos*, *tenéis*) |
+
+> La detección es heurística (sufijos + lista de irregulares), no un analizador morfológico completo. Puede haber falsos positivos ocasionales, especialmente con sustantivos que terminan igual que formas verbales.
+
+### Estadísticas
+
+El panel lateral muestra siempre, independientemente de la vista activa:
+
+- **Palabras** — total de palabras en el texto.
+- **Frases** — número de oraciones (separadas por `.`, `!`, `?`, `…`).
+- **Sílabas totales** — suma de sílabas de todo el texto.
+- **Síl./frase (media)** — media de sílabas por frase.
+- **Flesch-Szigriszt** — índice de legibilidad adaptado al español (0–100). Por encima de 75: fácil. 50–74: normal. Por debajo de 50: difícil o denso.
+
+### Ortografía y gramática
+
+El botón **Analizar texto** envía el texto a la API de Claude para un análisis de:
+
+- Errores de ortografía y puntuación.
+- Problemas de concordancia (género, número).
+- Repeticiones léxicas cercanas.
+
+Esta función requiere conexión a internet y que el entorno tenga acceso a la API de Anthropic (funciona directamente desde Claude.ai; en otros navegadores puede requerir configuración adicional).
+
+## Limitaciones conocidas
+
+- El detector de verbos no cubre los presentes de 3ª persona singular (*camina*, *corre*) por su alta ambigüedad morfológica.
+- La sinalefa no se implementa en el conteo de sílabas (relevante para poesía, no para prosa).
+- Extranjerismos y siglas pueden dar conteos de sílabas incorrectos.
+
+## Requisitos
+
+- Navegador moderno con soporte de ES2020+ (Chrome 85+, Firefox 79+, Safari 14+, Edge 85+).
+- Conexión a internet solo para el análisis ortográfico.
