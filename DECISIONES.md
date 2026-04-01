@@ -117,15 +117,28 @@ El coste es que muchos presentes de 3ª persona singular no se marcan (`camina`,
 - `MIN_SYL_LEN.indefinido3s = 2` (el más bajo posible); el filtro de stem (`stem.length >= 2`) ya previene falsos positivos con palabras de dos letras.
 
 **Colores:** misma familia roja para mantener la relación visual, pero distinguibles:
-- `indefinido3s`: rojo puro (`#cc0000` / `rgba(210,0,0,0.30)`)
-- `indefinido`: rojo-naranja (`#b84000` / `rgba(190,60,0,0.24)`)
+- `indefinido3s`: rojo puro (`.vt-indefinido3s`)
+- `indefinido`: rojo-naranja / azul (`.vt-indefinido`)
 
-### 4.4 Colores de tipos verbales (v3)
+### 4.4 Estilos de tipos verbales: de inline a clases CSS (v4)
 
-Los colores originales de `VT` eran variantes de los colores estándar de Bootstrap/Material con opacidades bajas (0.14–0.20), lo que los hacía difíciles de distinguir en el texto. En v3 se revisaron todos para:
-1. Aumentar la saturación del color base (`color`, usado en borde inferior y chips).
-2. Aumentar la opacidad del fondo (`bg`, 0.22–0.32 según el tipo).
-3. Distribuir los tipos por el espectro de color para maximizar la distinción visual, con asociaciones semánticas aproximadas: rojo=pasado fuerte, naranja=pasado habitual, ámbar=estado pasado, azul=futuro, cian=condicional, púrpura=subjuntivo, verde-azulado=participio, magenta=gerundio, lima=infinitivo, verde=presente.
+Hasta v3, cada entrada de `VT` tenía dos propiedades de color (`color`, `bg`) que se aplicaban como estilos inline en cada `<span>` generado. En v4 se migró a clases CSS.
+
+**Motivación:**
+- Los estilos inline mezclaban datos (JS) con presentación (CSS).
+- Cambiar un color requería tocar el array `VT` y regenerar el HTML.
+- No había forma limpia de tener variantes contextuales (panel vs. texto) sin lógica JS adicional (la función `bgSolid()` fue un parche temporal).
+
+**Solución adoptada:**
+1. Cada tipo verbal tiene ahora una propiedad `cls` (p.ej. `'vt-indefinido3s'`) en lugar de `color` y `bg`.
+2. En CSS, cada clase `.vt-xxx` define:
+   - `--vtc`: custom property con el color del tipo (usado para texto y borde inferior).
+   - `background`: fondo sólido del tipo.
+   - `color: var(--vtc)`: color de texto en chips del panel.
+3. La variante `.rendered-text .vm` añade `border-bottom: 1.5px solid var(--vtc)` una sola vez para todos los tipos.
+4. Las variantes `.rendered-text .vt-xxx` pueden sobreescribir el fondo si el panel y el texto necesitan valores distintos.
+
+**Consecuencia:** cambiar colores es ahora puramente CSS. El array `VT` en JavaScript no tiene ninguna propiedad de presentación.
 
 ### 4.5 Orden de prioridad entre tipos
 
@@ -136,14 +149,17 @@ El orden en `VT` no es arbitrario. Casos conflictivos:
 - `-ando` puede ser gerundio (`cantando`) o nombre propio / sustantivo (`Fernando`, `mando`). El filtro de stem ayuda (`mand-` tiene vocal, `fernanánd-` también — esto es un límite del sistema).
 - `-ía` puede ser imperfecto (`tenía`) o sustantivo (`energía`, `alegría`). Los sufijos acentuados son más fiables que los sin acento porque los sustantivos rara vez llevan esa acentuación en esa posición.
 
-### 4.6 Stopwords: política de expansión
+### 4.6 Stopwords: política de expansión y orden
 
 La lista `SW` tiene dos tipos de entradas:
 
 1. **Palabras gramaticales** (artículos, pronombres, preposiciones…) — lista cerrada y estable.
 2. **Sustantivos/adjetivos con sufijos verbales** — lista abierta, debe crecer con el uso.
+3. **Nombres propios** — personajes frecuentes en el texto de trabajo.
 
 Cuando el analizador marque un sustantivo incorrecto, la solución es añadirlo a `SW`. Esta es la forma esperada de evolución del detector.
+
+**Orden (v4):** dentro de cada categoría comentada (`// false positives`, `// proper names`), las entradas se mantienen en orden alfabético. Esto facilita buscar duplicados y localizar palabras al revisar la lista.
 
 ---
 
@@ -316,3 +332,4 @@ Se usa `@media (prefers-color-scheme: dark)` con variables CSS. Sin JavaScript, 
 | v1 | 30 mar 2026 | Primera versión funcional. Bug de markup en verbos. Falsos positivos masivos en sustantivos. |
 | v2 | 30 mar 2026 | Reescritura completa del renderizado. Arquitectura token-by-token. Expansión de SW y IRR. Toggle de proposiciones. |
 | v3 | 31 mar 2026 | Colores más saturados y visibles para frases y verbos. Desdoblamiento de `indefinido` en `indefinido3s` (3ª sing.) y `indefinido` (resto). |
+| v4 | 1 abr 2026 | Migración de estilos verbales de inline a clases CSS (`vt-xxx`) con custom property `--vtc`. Eliminación de `bgSolid()`. Stopwords de `SW` ordenadas alfabéticamente por categoría. |

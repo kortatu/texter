@@ -54,6 +54,32 @@
     background:var(--ink); color:var(--bg); font-family:sans-serif; font-size:10px; padding:2px 6px;
     border-radius:3px; white-space:nowrap; pointer-events:none; z-index:300; }
 
+  /* Verb-type classes — base (panel: transparent bg, colored text) */
+  .vt-indefinido3s { --vtc: #ff9d9d; background:rgba(210,0,0,1);  color:var(--vtc); }
+  .vt-indefinido   { --vtc:#8E8EEAFF; background:rgba(0,0,190,1); color:var(--vtc); }
+  .vt-imperfecto1  { --vtc: #642a00; background:rgba(255,110,0,1);color:var(--vtc); }
+  .vt-imperfecto23 { --vtc:#4dff4d; background:rgba(0,153,0,1);  color:var(--vtc); }
+  .vt-futuro       { --vtc:#003180; background:rgba(0,100,255,1);color:var(--vtc); }
+  .vt-condicional  { --vtc:#007aaa; background:rgba(0,180,230,1);color:var(--vtc); }
+  .vt-subjuntivo   { --vtc:#db9dfa; background:rgba(160,0,230,1);color:var(--vtc); }
+  .vt-participio   { --vtc:#007a55; background:rgba(0,200,140,1);color:var(--vtc); }
+  .vt-gerundio     { --vtc: #FAA7D4; background:rgba(230,0,160,1);color:var(--vtc); }
+  .vt-infinitivo   { --vtc: #206a20; background:rgba(150,220,0,1);color:var(--vtc); }
+  .vt-presente     { --vtc:#007722; background:rgba(0,190,70,1); color:var(--vtc); }
+  /* In rendered-text: solid background + border, inherit text color */
+  .rendered-text .vm               { border-bottom:1.5px solid var(--vtc); color:var(--vtc); }
+  .rendered-text .vt-indefinido3s  { background:rgba(210,0,0,1); }
+  .rendered-text .vt-indefinido    { background:rgba(0,0,190,1); }
+  .rendered-text .vt-imperfecto1   { background:rgba(255,110,0,1); }
+  .rendered-text .vt-imperfecto23  { background:rgba(0,153,0,1); }
+  .rendered-text .vt-futuro        { background:rgba(0,100,255,1); }
+  .rendered-text .vt-condicional   { background:rgba(0,180,230,1); }
+  .rendered-text .vt-subjuntivo    { background:rgba(160,0,230,1); }
+  .rendered-text .vt-participio    { background:rgba(0,200,140,1); }
+  .rendered-text .vt-gerundio      { background:rgba(230,0,160,1); }
+  .rendered-text .vt-infinitivo    { background:rgba(150,220,0,1);  }
+  .rendered-text .vt-presente      { background:rgba(0,190,70,1); }
+
   .sidebar { background:var(--panel); overflow-y:auto; display:flex; flex-direction:column; border-left:1px solid var(--border); }
   .sidebar-section { padding:14px 16px; border-bottom:1px solid var(--border); }
   .sidebar-section h3 { font-family:sans-serif; font-size:9px; font-weight:700; letter-spacing:1.2px; text-transform:uppercase; color:var(--ink3); margin-bottom:9px; }
@@ -140,7 +166,7 @@
   </div>
 </div>
 <script>
-const SAMPLE = `Velilla entró en la habitación detrás de su bastón. A su espalda, los mercenarios nevios se quedaron en el umbral, apoyados en el marco, observando a las presas que llevaban acechando hace rato: Lucilda con el bebé en brazos, Guzmán con la espalda en la pared. El viejo cruzó la estancia despacio, sin apartar los ojos del muchacho. Arrastraba los pies con esa parsimonia de quien ha dejado de tener prisa porque sabe que el tiempo, a cierta edad, ya no corre sino que camina a su lado. Se detuvo a un paso de Guzmán. Lo miró. Guzmán le devolvió la mirada sin moverse.`;
+const SAMPLE = `Velilla entró en la habitación detrás de su bastón. A su espalda, los mercenarios nevios se quedaron en el umbral, apoyados en el marco, observando a las presas que llevaban acechando hace rato: Lucilda con el bebé en brazos, Guzmán con la espalda en la pared. El viejo cruzó la estancia despacio, sin apartar los ojos del muchacho. Arrastraba los pies con esa parsimonia de quien ha dejado de tener prisa porque sabe que el tiempo, a cierta edad, ya no corre sino que camina a su lado. Se detuvo a un paso de Guzmán. Lo miró. Guzmán le devolvió la mirada sin moverse. Lo contará si pudiese`;
 
 document.getElementById('textarea-input').value = SAMPLE;
 let currentView = 'plain';
@@ -203,32 +229,32 @@ function splitPropositions(sent){
 
 // All verb type definitions ordered by specificity (most specific first)
 const VT = [
-  { key:'indefinido3s', label:'Pret. indef. 3ª sing.',  color:'#cc0000', bg:'rgba(210,0,0,0.30)',
+  { key:'indefinido3s', cls:'vt-indefinido3s', label:'Pret. indef. 3ª sing.',
     suf:['ó'] },
-  { key:'indefinido',  label:'Pret. indefinido (resto)',color:'#b84000', bg:'rgba(190,60,0,0.24)',
+  { key:'indefinido',   cls:'vt-indefinido',   label:'Pret. indefinido (resto)',
     suf:['é','aste','iste','asteis','aron','ieron','imos','isteis'] },
-  { key:'imperfecto1', label:'Pret. imperf. 1ª (-aba)', color:'#d45f00', bg:'rgba(255,110,0,0.25)',
+  { key:'imperfecto1',  cls:'vt-imperfecto1',  label:'Pret. imperf. 1ª (-aba)',
     suf:['ábamos','abais','aban','abas','aba'] },
-  { key:'imperfecto23',label:'Pret. imperf. 2ª/3ª (-ía)',color:'#a07800',bg:'rgba(240,190,0,0.32)',
+  { key:'imperfecto23', cls:'vt-imperfecto23', label:'Pret. imperf. 2ª/3ª (-ía)',
     suf:['íamos','íais','ían','ías','ía'] },
-  { key:'futuro',      label:'Futuro',                 color:'#0055dd', bg:'rgba(0,100,255,0.22)',
+  { key:'futuro',       cls:'vt-futuro',       label:'Futuro',
     suf:['aremos','aréis','arán','arás','ará','eremos','eréis','erán','erás','erá','iremos','iréis','irán','irás','irá','aré','eré','iré'] },
-  { key:'condicional', label:'Condicional',            color:'#007aaa', bg:'rgba(0,180,230,0.25)',
+  { key:'condicional',  cls:'vt-condicional',  label:'Condicional',
     suf:['aríamos','aríais','arían','arías','aría','eríamos','eríais','erían','erías','ería','iríamos','iríais','irían','irías','iría'] },
-  { key:'subjuntivo',  label:'Subjuntivo',             color:'#8800cc', bg:'rgba(160,0,230,0.20)',
+  { key:'subjuntivo',   cls:'vt-subjuntivo',   label:'Subjuntivo',
     suf:['ásemos','ésemos','áramos','éramos','áremos','éremos',
          'aseis','eseis','areis','ereis',
          'asen','esen','aren','eren',
          'ases','eses','ares','eres',
          'aras','eras','ara','era','ase','ese','are','ere'] },
-  { key:'participio',  label:'Participio',             color:'#007a55', bg:'rgba(0,200,140,0.26)',
+  { key:'participio',   cls:'vt-participio',   label:'Participio',
     suf:['adas','idos','idas','ados','ada','ido','ida','ado',
          'uerto','ierto','iesto','rito','cho','sto','echa','echo'] },
-  { key:'gerundio',    label:'Gerundio',               color:'#bb0077', bg:'rgba(230,0,160,0.22)',
+  { key:'gerundio',     cls:'vt-gerundio',     label:'Gerundio',
     suf:['ándose','iéndose','yendo','ando','iendo'] },
-  { key:'infinitivo',  label:'Infinitivo',             color:'#5a8800', bg:'rgba(150,220,0,0.28)',
+  { key:'infinitivo',   cls:'vt-infinitivo',   label:'Infinitivo',
     suf:['arse','erse','irse','ar','er','ir'] },
-  { key:'presente',    label:'Presente',               color:'#007722', bg:'rgba(0,190,70,0.26)',
+  { key:'presente',     cls:'vt-presente',     label:'Presente',
     suf:['amos','emos','imos','áis','éis','ís'] },
 ];
 
@@ -286,18 +312,18 @@ const SW = new Set([
   'entonces','así','aquí','allí','allá','ahí','hoy','ayer','siempre','nunca','jamás',
   'quizás','algo','nada','nadie','alguien','cada','otro','otra','otros','otras',
   // false positives — nouns/adjectives that match verb suffixes
-  'espalda','bastón','habitación','umbral','estancia','mercenarios','mercenario',
-  'parsimonia','presas','presa','brazos','brazo','pared','marco','bastón','muchacho',
-  'nevios','nevio','bebé','edad','tiempo','lado','paso','mirada','ojos','pies',
-  'rato','entrada','ventana','puerta','mesa','silla','suelo','techo','calle',
-  'mundo','tierra','agua','fuego','aire','luz','noche','día','tarde','mañana',
-  'casa','lugar','momento','vez','veces','parte','partes','modo','forma',
-  'era','eras','sido','estar','ser','haber',
-  'primera','segundo','tercera','cualquiera','madera','barrera','cartera','manera',
-  'vida','comida','salida','medida','herida','partida','guarida',
-  'ruido','apellido','sentido','pedido',
+  'agua','aire','apellido','barrera','bastón','bebé','brazo','brazos',
+  'calle','cartera','casa','comida','cualquiera','día','edad','entrada',
+  'era','eras','espalda','estancia','estar','forma','fuego','guarida',
+  'haber','habitación','herida','lado','lugar','luz','madera','manera',
+  'mañana','marco','medida','mercenario','mercenarios','mesa','mirada','modo',
+  'momento','muchacho','mundo','nevio','nevios','noche','ojos','pared',
+  'parsimonia','parte','partes','partida','paso','pedido','pies','presa',
+  'presas','primera','puerta','rato','ruido','salida','segundo','sentido',
+  'ser','sido','silla','suelo','tarde','techo','tercera','tiempo',
+  'tierra', 'todavía','umbral','ventana','vez','veces','vida',
   // proper names
-  'lucilda','guzmán','velilla','escroc','karquia','reinor','guzmán',
+  'escroc','guzmán','karquia','lucilda','reinor','velilla',
 ]);
 
 // Minimum length per suffix type to reduce false positives
@@ -389,14 +415,12 @@ function updateVbPanel(){
   VT.forEach(vt=>{
     const list=[...new Set(AD.vbt[vt.key])];
     if(!list.length)return;
-    html+=`<div class="vgroup-title" style="color:${vt.color};background:${vt.bg}">${vt.label}</div>`;
-    html+=`<div class="vchips">${list.map(v=>`<span class="vchip" style="background:${vt.bg};color:${vt.color}">${esc(v)}</span>`).join('')}</div>`;
+    html+=`<div class="vgroup-title ${vt.cls}">${vt.label}</div>`;
+    html+=`<div class="vchips">${list.map(v=>`<span class="vchip ${vt.cls}">${esc(v)}</span>`).join('')}</div>`;
   });
   document.getElementById('verb-panel').innerHTML=html||'<p class="empty-state">No se detectaron verbos</p>';
 }
 
-// ══════════════════════════════════════════════════════
-//  RENDER
 // ══════════════════════════════════════════════════════
 function renderView(){
   const text=document.getElementById('textarea-input').value;
@@ -428,10 +452,9 @@ function renderView(){
       const key=classifyToken(tok.text);
       if(!key){html+=esc(tok.text);return;}
       const vt=VT.find(v=>v.key===key);
-      html+=`<span class="vm" style="background:${vt.bg};border-bottom:1.5px solid ${vt.color}"><span class="tt">${vt.label}</span>${esc(tok.text)}</span>`;
+      html+=`<span class="vm ${vt.cls}"><span class="tt">${vt.label}</span>${esc(tok.text)}</span>`;
     });
     el.innerHTML=html;
-    return;
   }
 }
 

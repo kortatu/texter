@@ -75,9 +75,16 @@ Aplicadas como `<span class="fl-N">` en la vista "frases":
 
 ### Clases de marcado verbal
 
-Los verbos se marcan con `<span class="vm">` más un estilo inline. La clase `.vm` proporciona `position:relative` para el tooltip. El tooltip `.tt` (hijo directo) se muestra con `.vm:hover .tt { display:block }`.
+Los verbos se marcan con `<span class="vm vt-xxx">`. La clase `.vm` proporciona `position:relative` para el tooltip. El tooltip `.tt` (hijo directo) se muestra con `.vm:hover .tt { display:block }`.
 
-El color y fondo de cada tipo verbal se aplica como estilo inline (no como clase CSS), permitiendo que los colores estén centralizados en el array `VT` en JavaScript.
+Cada tipo verbal tiene su propia clase `.vt-xxx` definida en CSS con:
+- `--vtc` — custom property con el color del tipo (borde inferior y texto en chips).
+- `background` — fondo sólido del tipo.
+- `color: var(--vtc)` — color de texto en el panel de verbos.
+
+La regla `.rendered-text .vm` aplica `border-bottom: 1.5px solid var(--vtc)` a todos los tipos a la vez en la vista de texto. Las variantes `.rendered-text .vt-xxx` pueden sobreescribir el `background` si el panel y el texto requieren valores distintos.
+
+Los colores están centralizados en CSS, no en el array `VT`.
 
 ---
 
@@ -203,12 +210,13 @@ Array de 10 objetos, ordenados de más específico a más genérico. El orden im
 ```javascript
 {
   key:   string,   // identificador interno ('indefinido', 'imperfecto1', etc.)
+  cls:   string,   // clase CSS del tipo ('vt-indefinido', 'vt-imperfecto1', etc.)
   label: string,   // etiqueta legible para el UI
-  color: string,   // color CSS para borde y texto de chip
-  bg:    string,   // color CSS para fondo (con transparencia)
   suf:   string[]  // sufijos, ordenados de más largo a más corto dentro del tipo
 }
 ```
+
+Los colores están en CSS, no en este objeto. Ver sección "Clases de marcado verbal".
 
 **Orden de los tipos (de más a menos específico):**
 
@@ -405,9 +413,11 @@ F_LABELS = ['1–3 síl','4–8 síl','9–15 síl','16–25 síl','26+ síl']
 
 Actualiza el panel de verbos (solo visible en vista "verbos"):
 - Por cada tipo en `VT`, si `AD.vbt[vt.key]` tiene elementos:
-  - Título con color del tipo.
-  - Chips con los verbos detectados (deduplicados con `Set`).
+  - `<div class="vgroup-title vt-xxx">` — título con el color del tipo vía CSS.
+  - `<span class="vchip vt-xxx">` — chips con los verbos detectados (deduplicados con `Set`).
 - Si no hay ningún verbo detectado: mensaje "No se detectaron verbos".
+
+Los estilos de color vienen de la clase CSS `vt-xxx`, no de atributos `style` inline.
 
 ---
 
@@ -431,7 +441,7 @@ Genera el HTML del panel "Analizado" según `currentView`.
 2. Para cada token:
    - Si no es palabra: `html += esc(tok.text)`.
    - Si es palabra pero sin clasificación: `html += esc(tok.text)`.
-   - Si es palabra con clasificación: genera `<span class="vm" style="..."><span class="tt">LABEL</span>PALABRA</span>`.
+   - Si es palabra con clasificación: genera `<span class="vm vt-xxx"><span class="tt">LABEL</span>PALABRA</span>`. El color y fondo vienen del CSS de la clase.
 3. El resultado se asigna a `el.innerHTML`.
 
 **Invariante crítico:** `esc()` se aplica siempre a `tok.text` antes de insertarlo. Nunca se hace `.replace()` sobre `html` una vez iniciada la construcción.
