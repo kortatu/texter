@@ -297,6 +297,18 @@ Las estadísticas están siempre visibles independientemente de la pestaña acti
 
 Georgia en el editor y el texto analizado da un aspecto de "máquina de escribir literaria" coherente con el uso. La interfaz (etiquetas, botones, estadísticas) usa sans-serif para máxima legibilidad a tamaños pequeños.
 
+### 10.5 Persistencia del texto con localStorage
+
+**Decisión:** el contenido del textarea se guarda en `localStorage` en cada keystroke (`oninput`). Al cargar la página, si hay texto guardado se restaura; si no, se muestra el texto de `SAMPLE`.
+
+**Razón:** la herramienta se usa sobre textos en elaboración. Recargar la página (por accidente o para ver cambios de CSS/JS) no debe suponer perder el texto de trabajo.
+
+**Alternativa descartada:** no persistir nada y confiar en que el usuario no recargue. Inaceptable para uso real.
+
+**Alternativa descartada:** guardar con debounce (solo cada N ms). Añade complejidad innecesaria; `localStorage.setItem` en cada keystroke es negligible en rendimiento para textos de prosa.
+
+**Clave usada:** `'analizador-texto'`. Una sola entrada, el texto completo como string plano.
+
 ### 10.4 Dark mode automático
 
 Se usa `@media (prefers-color-scheme: dark)` con variables CSS. Sin JavaScript, sin toggle manual. La preferencia del sistema operativo se respeta automáticamente.
@@ -333,3 +345,4 @@ Se usa `@media (prefers-color-scheme: dark)` con variables CSS. Sin JavaScript, 
 | v2 | 30 mar 2026 | Reescritura completa del renderizado. Arquitectura token-by-token. Expansión de SW y IRR. Toggle de proposiciones. |
 | v3 | 31 mar 2026 | Colores más saturados y visibles para frases y verbos. Desdoblamiento de `indefinido` en `indefinido3s` (3ª sing.) y `indefinido` (resto). |
 | v4 | 1 abr 2026 | Migración de estilos verbales de inline a clases CSS (`vt-xxx`) con custom property `--vtc`. Eliminación de `bgSolid()`. Stopwords de `SW` ordenadas alfabéticamente por categoría. |
+| v5 | 1 abr 2026 | Persistencia del texto en `localStorage`. Al recargar se restaura el último texto editado; si no hay nada guardado, se usa `SAMPLE`. |

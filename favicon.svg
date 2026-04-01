@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Fondo -->
+  <rect width="32" height="32" rx="6" fill="#1c1c1c"/>
+
+  <!-- Marco decorativo dorado -->
+  <rect x="1.5" y="1.5" width="29" height="29" rx="5" fill="none" stroke="#8a6a2a" stroke-width="0.5" stroke-dasharray="2.5,2.5"/>
+
+  <!-- Caja pergamino para la K -->
+  <rect x="3" y="3" width="10" height="13" rx="2" fill="#2a1f0a"/>
+  <rect x="3.5" y="3.5" width="9" height="12" rx="1.5" fill="#f0d080" opacity="0.1"/>
+
+  <!-- K iluminada -->
+  <!-- Asta vertical -->
+  <path d="M6 5 C5.6 5 5.2 5.3 5.2 5.8 L5.2 14.5 C5.2 15 5.6 15.3 6 15.3 C6.5 15.3 6.9 15 6.9 14.5 L6.9 5.8 C6.9 5.3 6.5 5 6 5 Z" fill="#d4a017"/>
+  <!-- Brazo superior -->
+  <path d="M6.8 10 C7.5 8.5 8.5 7 9.5 6 C10.2 5.3 10.8 5.1 11.1 5.5 C11.4 5.9 11 6.5 10.2 7.3 C9.2 8.3 8.1 9.5 7.3 10.8 Z" fill="#d4a017"/>
+  <!-- Brazo inferior -->
+  <path d="M6.8 10.5 C7.8 11.8 9 13.2 10.2 14.3 C11 15 11.4 15.2 11.1 15.6 C10.8 16 10.1 15.8 9.4 15.1 C8.3 14.1 7.2 12.7 6.5 11.3 Z" fill="#d4a017"/>
+  <!-- Serif superior -->
+  <path d="M4.8 6 Q6 5.1 7.4 6" fill="none" stroke="#d4a017" stroke-width="0.7" stroke-linecap="round"/>
+  <!-- Serif inferior -->
+  <path d="M4.8 14.5 Q6 15.4 7.4 14.5" fill="none" stroke="#d4a017" stroke-width="0.7" stroke-linecap="round"/>
+  <!-- Punto rojo decorativo -->
+  <circle cx="4.5" cy="4.5" r="1.2" fill="#8b1a1a"/>
+  <!-- Filigrana -->
+  <path d="M4 8.5 Q5.5 7.8 6.5 8.5" fill="none" stroke="#8a6a2a" stroke-width="0.4" opacity="0.6"/>
+  <path d="M4 12 Q5.5 12.7 6.5 12" fill="none" stroke="#8a6a2a" stroke-width="0.4" opacity="0.6"/>
+
+  <!-- Líneas de texto junto a la K -->
+  <rect x="15" y="5" width="14" height="2.5" rx="1" fill="#666"/>
+  <rect x="15" y="9" width="11" height="2.5" rx="1" fill="#666"/>
+  <rect x="15" y="13" width="13" height="2.5" rx="1" fill="#555"/>
+
+  <!-- Líneas de texto bajo la K (párrafo completo) -->
+  <rect x="3" y="18" width="26" height="2.5" rx="1" fill="#666"/>
+  <rect x="3" y="22" width="22" height="2.5" rx="1" fill="#555"/>
+  <rect x="3" y="26" width="16" height="2.5" rx="1" fill="#444"/>
+
+  <!-- Marcador de análisis rojo -->
+  <rect x="0" y="3" width="2.5" height="26" rx="1.2" fill="#c0392b"/>
+
+  <!-- Lupa de análisis -->
+  <circle cx="23" cy="20" r="4" fill="none" stroke="#c0392b" stroke-width="1.4"/>
+  <line x1="25.8" y1="22.8" x2="29" y2="26" stroke="#c0392b" stroke-width="1.6" stroke-linecap="round"/>
+</svg>

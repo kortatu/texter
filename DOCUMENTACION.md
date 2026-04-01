@@ -91,6 +91,9 @@ Los colores están centralizados en CSS, no en el array `VT`.
 ## Estado global
 
 ```javascript
+const LS_KEY = 'analizador-texto';
+// Clave de localStorage donde se persiste el texto del textarea.
+
 let currentView = 'plain';
 // Valores posibles: 'plain' | 'frases' | 'verbos'
 // Controla qué renderiza renderView() y qué paneles del sidebar son visibles.
@@ -476,9 +479,10 @@ Cambia entre las pestañas "Editar" y "Analizado".
 
 Handler del evento `oninput` del textarea.
 
-1. Recalcula `AD`.
-2. Actualiza stats.
-3. Si `currentView !== 'plain'`: renderiza (actualización en tiempo real).
+1. Guarda el contenido en `localStorage` bajo `LS_KEY`.
+2. Recalcula `AD`.
+3. Actualiza stats.
+4. Si `currentView !== 'plain'`: renderiza (actualización en tiempo real).
 
 ---
 
@@ -521,11 +525,12 @@ Handler del evento `oninput` del textarea.
 ## Inicialización
 
 ```javascript
+ta.value = localStorage.getItem(LS_KEY) ?? SAMPLE;
 AD = analyze();
 updateStats();
 ```
 
-Al cargar la página, el textarea tiene el texto de `SAMPLE` (hardcodeado). Se analiza inmediatamente para que las estadísticas estén disponibles desde el primer momento, sin necesidad de que el usuario pulse nada.
+Al cargar la página, el textarea se rellena con el texto guardado en `localStorage` (clave `LS_KEY`). Si no hay nada guardado (primera visita o localStorage limpio), se usa el texto de `SAMPLE`. Después se analiza inmediatamente para que las estadísticas estén disponibles sin necesidad de que el usuario pulse nada.
 
 ---
 
