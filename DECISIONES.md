@@ -191,22 +191,68 @@ Las reglas siguen la normativa de la RAE (Ortografía de la lengua española, 20
 
 ### 6.1 Decisión sobre los rangos
 
-Los rangos elegidos (1–3 / 4–8 / 9–15 / 16–25 / 26+) se basan en:
+**Rangos actuales (v6): 1–6 / 7–20 / 21–40 / 41+**
 
-- La adaptación al español del índice de Flesch por Fernández Huerta (1959) y su desarrollo por Szigriszt-Pazos (1992), que toman como referencia la media de sílabas por frase.
-- Estudios de legibilidad en prosa narrativa española que identifican la frase de 9–15 sílabas como la "zona de confort" para lectura fluida.
-- La intuición del propio escritor: una frase de 3 sílabas tiene un impacto diferente a una de 25, y esa diferencia debe ser visible de un vistazo.
+Los rangos originales (1–3 / 4–8 / 9–15 / 16–25 / 26+) se derivaron de la escala de Flesch-Szigriszt, que usa sílabas por frase como variable. En la práctica, con prosa literaria española, los dos primeros clusters raramente se usaban (una frase de 1–8 sílabas es casi un telegrama: "Entró." tiene 3 sílabas), y el último acumulaba la gran mayoría de las frases.
 
-**Colores asignados:**
-- Verde (1–3): máximo impacto, máxima brevedad. El verde frío contrasta sin connotar "peligro".
-- Lima/amarillo (4–8): corta, ágil.
-- Naranja (9–15): zona media — el naranja llama la atención pero sin alarmar.
-- Magenta (16–25): larga, empieza a ser llamativa.
-- Rojo (26+): muy larga, zona de riesgo de pérdida del lector.
+**Nota sobre Fernández Huerta y Szigriszt:** la fórmula del índice de legibilidad usa *palabras por frase* y *sílabas por palabra* — no sílabas por frase directamente. Los clusters de esta vista son una decisión de diseño independiente del índice, no un estándar. Grammarcheck.net, por ejemplo, usa clusters en palabras (1 / 2–6 / 7–15 / 16–25 / 26–39 / 40+), que son proporcionales pero en una unidad distinta (aprox. ×2,5 para español).
 
-**Decisión de paleta (v3):** los colores originales (rojo→naranja→verde→azul→morado) tenían opacidades muy bajas (0.14–0.16) que hacían los fondos casi imperceptibles, especialmente en pantallas brillantes. Se subió la opacidad (0.26–0.38) y se usaron colores más saturados, fuera de la paleta general de la UI, para que el marcado sea útil de un vistazo. La progresión ahora va de verde/frío (frases cortas) a rojo/cálido (frases largas), invirtiendo la convención de semáforo anterior pero ganando en visibilidad.
+**Razón del cambio:** observación empírica sobre textos reales de prosa literaria. Los rangos nuevos distribuyen las frases de forma útil para el escritor.
 
-### 6.2 Toggle de proposiciones
+**Colores asignados (4 clusters):**
+- Verde (1–6): frase muy corta, impacto máximo.
+- Naranja (7–20): corta a media, zona de confort.
+- Magenta (21–40): larga, empieza a exigir atención del lector.
+- Rojo (41+): muy larga, riesgo de pérdida.
+
+**Decisión de paleta (v3):** los colores originales tenían opacidades muy bajas (0.14–0.16), casi imperceptibles. Se subió la opacidad (0.26–0.38) y se eliminó el color lima/amarillo al reducir los clusters de 5 a 4.
+
+### 6.2 Puntuación de flow
+
+**Decisión:** añadir un indicador de flow (variabilidad rítmica de las frases) basado en el **nPVI normalizado** (normalized Pairwise Variability Index), escala 0–100.
+
+**Por qué nPVI y no desviación estándar:**
+- La SD mide variabilidad global: un texto con una frase muy larga y el resto iguales tiene SD alta pero ritmo plano.
+- El nPVI mide la diferencia entre cada par de frases *consecutivas*, lo que captura el ritmo local que percibe el lector frase a frase.
+- Herramientas como ProWritingAid usan SD; el nPVI es más común en fonética y análisis de ritmo musical, pero es la métrica que mejor modela la experiencia de lectura rítmica.
+
+**Fórmula:**
+```
+nPVI_score = min(100,  nPVI_raw / 2)
+           donde nPVI_raw = 100/(n-1) × Σ |sil_i – sil_{i+1}| / ((sil_i + sil_{i+1}) / 2)
+
+SD_norm    = tanh(SD / 16) × 100
+
+flow       = round(0.8 × nPVI_score + 0.2 × SD_norm)
+```
+
+**Por qué dos componentes:**
+- `nPVI` mide ritmo local (variación entre frases consecutivas) pero no distingue bien textos con variación relativa alta y rango absoluto estrecho. Ejemplo: [1,2,1,2] da nPVI=33 y [1,10,1,50] da nPVI=87, lo cual ya diferencia bien los casos, pero añadir SD refuerza la penalización del rango estrecho.
+- `SD` mide el rango global de longitudes. Se normaliza con `tanh(SD/16)` en lugar de una división lineal porque la SD no tiene techo natural — una constante divisora fija resulta arbitraria. `k=16` se eligió empíricamente para que SD=30 dé ≈95%, que se considera un rango amplio en prosa literaria española.
+- Peso 80/20: el nPVI (ritmo frase a frase) es la señal principal; la SD actúa como corrección de rango.
+
+**Valores de referencia:**
+
+| Texto | nPVI | SD_norm | flow |
+|---|---|---|---|
+| [1, 10, 1, 50] | 87 | 90 | 88 |
+| [1, 2, 1, 2]   | 33 |  4 | 27 |
+
+**Escala de etiquetas:**
+
+| Rango | Etiqueta |
+|---|---|
+| 0–25 | bajo |
+| 26–60 | medio |
+| 61–80 | bueno |
+| 81–90 | alto |
+| 91–100 | óptimo |
+
+**Implementación:** `flowScore(syls)` recibe el array de sílabas por frase y devuelve el entero 0–100. `flowLabel(score)` devuelve la etiqueta. Ambas se usan en `analyze()` y `updateStats()`.
+
+**Parámetros de ajuste:** el peso 80/20 y el valor `k=16` son los dos parámetros calibrables con textos reales.
+
+### 6.3 Toggle de proposiciones
 
 **Decisión:** añadir una opción para dividir también por proposiciones (comas, puntos y coma, dos puntos, rayas).
 
@@ -346,3 +392,6 @@ Se usa `@media (prefers-color-scheme: dark)` con variables CSS. Sin JavaScript, 
 | v3 | 31 mar 2026 | Colores más saturados y visibles para frases y verbos. Desdoblamiento de `indefinido` en `indefinido3s` (3ª sing.) y `indefinido` (resto). |
 | v4 | 1 abr 2026 | Migración de estilos verbales de inline a clases CSS (`vt-xxx`) con custom property `--vtc`. Eliminación de `bgSolid()`. Stopwords de `SW` ordenadas alfabéticamente por categoría. |
 | v5 | 1 abr 2026 | Persistencia del texto en `localStorage`. Al recargar se restaura el último texto editado; si no hay nada guardado, se usa `SAMPLE`. |
+| v6 | 1 abr 2026 | Clusters de longitud de frase ajustados a prosa literaria real: de 5 rangos (1–3/4–8/9–15/16–25/26+) a 4 (1–6/7–20/21–40/41+). Eliminado color lima. |
+| v7 | 1 abr 2026 | Indicador de flow basado en nPVI normalizado (0–100). Etiquetas: bajo/medio/bueno/alto/óptimo. |
+| v8 | 2 abr 2026 | Flow refinado: fórmula combinada 80% nPVI + 20% tanh(SD/16). La SD normalizada por tanh corrige textos con variación relativa alta pero rango absoluto estrecho. |

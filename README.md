@@ -28,11 +28,10 @@ Colorea cada frase según su número de sílabas:
 
 | Color | Rango | Lectura |
 |---|---|---|
-| Verde | 1–3 sílabas | Muy corta, impacto máximo |
-| Lima | 4–8 sílabas | Corta, ágil |
-| Naranja | 9–15 sílabas | Media, zona de confort |
-| Magenta | 16–25 sílabas | Larga, exige atención |
-| Rojo | 26+ sílabas | Muy larga, riesgo de pérdida |
+| Verde | 1–6 sílabas | Muy corta, impacto máximo |
+| Naranja | 7–20 sílabas | Corta a media |
+| Magenta | 21–40 sílabas | Larga, exige atención |
+| Rojo | 41+ sílabas | Muy larga, riesgo de pérdida |
 
 El panel lateral muestra la distribución con una barra y los recuentos por categoría.
 
@@ -67,6 +66,15 @@ El panel lateral muestra siempre, independientemente de la vista activa:
 - **Sílabas totales** — suma de sílabas de todo el texto.
 - **Síl./frase (media)** — media de sílabas por frase.
 - **Flesch-Szigriszt** — índice de legibilidad adaptado al español (0–100). Por encima de 75: fácil. 50–74: normal. Por debajo de 50: difícil o denso.
+- **Flow** — variabilidad rítmica de las frases (0–100). Mide cuánto varía la longitud entre frases consecutivas. Un texto con frases de tamaños muy distintos puntuará alto; un texto con frases todas similares puntuará bajo.
+
+| Rango | Nivel |
+|---|---|
+| 0–25 | bajo |
+| 26–60 | medio |
+| 61–80 | bueno |
+| 81–90 | alto |
+| 91–100 | óptimo |
 
 ### Ortografía y gramática
 

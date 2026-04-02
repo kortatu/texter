@@ -43,11 +43,10 @@
   #textarea-input::placeholder { color:var(--ink3); font-style:italic; }
   .rendered-text { font-family:'Georgia',serif; font-size:17px; line-height:1.95; color:var(--ink); }
 
-  .fl-1 { background:rgba(0,200,100,0.32); border-radius:2px; }
-  .fl-2 { background:rgba(200,210,0,0.38); border-radius:2px; }
-  .fl-3 { background:rgba(255,120,0,0.30); border-radius:2px; }
-  .fl-4 { background:rgba(255,0,140,0.26); border-radius:2px; }
-  .fl-5 { background:rgba(200,0,30,0.28); border-radius:2px; }
+  .fl-1 { background:rgba(0,200,100,0.52); border-radius:2px; }
+  .fl-2 { background:rgba(255,120,0,0.50); border-radius:2px; }
+  .fl-3 { background:rgba(255,0,140,0.56); border-radius:2px; }
+  .fl-4 { background:rgba(200,0,30,0.58); border-radius:2px; }
 
   .vm { border-radius:2px; padding:0 2px; cursor:default; position:relative; display:inline; }
   .vm:hover .tt { display:block; }
@@ -147,12 +146,13 @@
       <div class="stat-row"><span class="label">Sílabas totales</span><span class="val" id="st-sy">—</span></div>
       <div class="stat-row"><span class="label">Síl./frase (media)</span><span class="val" id="st-av">—</span></div>
       <div class="stat-row"><span class="label">Flesch-Szigriszt</span><span class="val" id="st-fl">—</span></div>
+      <div class="stat-row"><span class="label">Flow</span><span class="val" id="st-flow">—</span></div>
     </div>
     <div class="sidebar-section" id="sec-fr" style="display:none">
       <h3>Distribución longitud</h3>
       <div class="sparkbar" id="spark"></div>
       <div id="leg-fr"></div>
-      <p style="font-family:sans-serif;font-size:9px;color:var(--ink3);margin-top:5px">clusters: 1–3 · 4–8 · 9–15 · 16–25 · 26+ sílabas</p>
+      <p style="font-family:sans-serif;font-size:9px;color:var(--ink3);margin-top:5px">clusters: 1–6 · 7–20 · 21–40 · 41+ sílabas</p>
     </div>
     <div class="sidebar-section" id="sec-vb" style="display:none">
       <h3>Verbos por forma</h3>
@@ -204,7 +204,29 @@ function sylCount(word) {
 }
 
 function segSyl(seg){ return seg.trim().split(/\s+/).filter(Boolean).reduce((s,w)=>s+sylCount(w),0); }
-function sylClass(n){ return n<=3?1:n<=8?2:n<=15?3:n<=25?4:5; }
+function sylClass(n){ return n<=6?1:n<=20?2:n<=40?3:4; }
+
+// Flow score (0–100): 80% nPVI (local rhythm) + 20% tanh(SD/16) (global range).
+// nPVI_raw = 100/(n-1) × Σ |d_i – d_{i+1}| / ((d_i + d_{i+1}) / 2)  → divide by 2 → 0–100
+// SD_norm  = tanh(SD / 16) × 100  (k=16 chosen so SD=30 ≈ 95%)
+function flowScore(syls){
+  if(syls.length<2)return 0;
+  const n=syls.length;
+  // nPVI component
+  let sum=0;
+  for(let i=0;i<n-1;i++){
+    const a=syls[i],b=syls[i+1];
+    if(a+b===0)continue;
+    sum+=Math.abs(a-b)/((a+b)/2);
+  }
+  const nPVI=Math.min(100, 100/(n-1)*sum/2);
+  // SD component
+  const mean=syls.reduce((s,v)=>s+v,0)/n;
+  const sd=Math.sqrt(syls.reduce((s,v)=>s+(v-mean)**2,0)/(n-1));
+  const sdNorm=Math.tanh(sd/16)*100;
+  return Math.round(0.8*nPVI + 0.2*sdNorm);
+}
+function flowLabel(s){ return s<=25?'bajo':s<=60?'medio':s<=80?'bueno':s<=90?'alto':'óptimo'; }
 
 // ══════════════════════════════════════════════════════
 //  SENTENCE & PROPOSITION SPLITTING
@@ -374,14 +396,15 @@ function analyze() {
   if (!text.trim()) return null;
   const sents = splitSentences(text);
   const syls = sents.map(segSyl);
-  const dist = [0,0,0,0,0]; syls.forEach(n=>dist[sylClass(n)-1]++);
+  const dist = [0,0,0,0]; syls.forEach(n=>dist[sylClass(n)-1]++);
   const words = text.split(/\s+/).filter(Boolean);
   const totSyl = words.reduce((s,w)=>s+sylCount(w),0);
   const avg = sents.length ? (totSyl/sents.length).toFixed(1) : 0;
   const flesch = Math.max(0,Math.min(100,Math.round(206.84-0.60*(totSyl/words.length*10)-1.02*(sents.length/words.length*100))));
   const vbt = {}; VT.forEach(v=>vbt[v.key]=[]);
   tokenize(text).forEach(t=>{ if(!t.isWord)return; const k=classifyToken(t.text); if(k)vbt[k].push(t.text); });
-  return { sents, syls, dist, totSyl, avg, nw:words.length, flesch, vbt };
+  const flow=flowScore(syls);
+  return { sents, syls, dist, totSyl, avg, nw:words.length, flesch, flow, vbt };
 }
 
 function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
@@ -397,11 +420,12 @@ function updateStats(){
   document.getElementById('st-sy').textContent=AD.totSyl;
   document.getElementById('st-av').textContent=AD.avg;
   document.getElementById('st-fl').textContent=AD.flesch+' ·'+fl;
+  document.getElementById('st-flow').textContent=AD.flow+' · '+flowLabel(AD.flow);
 }
 
-const F_COLORS=['#00b850','#99a800','#ff6a00','#e6007a','#c0001e'];
-const F_BGS=['rgba(0,200,100,0.32)','rgba(200,210,0,0.38)','rgba(255,120,0,0.30)','rgba(255,0,140,0.26)','rgba(200,0,30,0.28)'];
-const F_LABELS=['1–3 síl','4–8 síl','9–15 síl','16–25 síl','26+ síl'];
+const F_COLORS=['#00b850','#ff6a00','#e6007a','#c0001e'];
+const F_BGS=['rgba(0,200,100,0.32)','rgba(255,120,0,0.30)','rgba(255,0,140,0.26)','rgba(200,0,30,0.28)'];
+const F_LABELS=['1–6 síl','7–20 síl','21–40 síl','41+ síl'];
 
 function updateFrPanel(){
   if(!AD)return;

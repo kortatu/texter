@@ -155,16 +155,54 @@ segSyl(seg) {
 
 ---
 
-### `sylClass(n) → 1|2|3|4|5`
+### `sylClass(n) → 1|2|3|4`
 
 Devuelve el cluster de longitud dado un número de sílabas.
 
 ```javascript
-n <= 3  → 1   (muy corta)
-n <= 8  → 2   (corta)
-n <= 15 → 3   (media)
-n <= 25 → 4   (larga)
-else    → 5   (muy larga)
+n <= 6  → 1   (muy corta)
+n <= 20 → 2   (corta–media)
+n <= 40 → 3   (larga)
+else    → 4   (muy larga)
+```
+
+---
+
+### `flowScore(syls) → number`
+
+Calcula el indicador de flow del texto combinando nPVI (ritmo local) y SD normalizada (rango global).
+
+**Parámetros:**
+- `syls` — `number[]`. Array de sílabas por frase, en orden de aparición.
+
+**Fórmula:**
+```
+nPVI_score = min(100,  nPVI_raw / 2)
+           donde nPVI_raw = 100/(n-1) × Σ |syls[i] – syls[i+1]| / ((syls[i] + syls[i+1]) / 2)
+
+mean    = Σ syls[i] / n
+sd      = sqrt( Σ (syls[i] - mean)² / (n-1) )
+SD_norm = tanh(sd / 16) × 100
+
+flowScore = round(0.8 × nPVI_score + 0.2 × SD_norm)
+```
+
+Devuelve `0` si hay menos de 2 frases. Ignora pares donde `a+b === 0`.
+
+**Parámetros calibrables:** `k=16` en la tanh (SD=30 ≈ 95%); peso 80/20 entre nPVI y SD.
+
+---
+
+### `flowLabel(score) → string`
+
+Devuelve la etiqueta textual para un score de flow.
+
+```javascript
+score <= 25 → 'bajo'
+score <= 60 → 'medio'
+score <= 80 → 'bueno'
+score <= 90 → 'alto'
+else        → 'óptimo'
 ```
 
 ---
@@ -346,11 +384,12 @@ Ejecuta todo el análisis local sobre el texto del textarea.
 {
   sents:  string[],         // frases del texto (splitSentences)
   syls:   number[],         // sílabas por frase (paralelo a sents)
-  dist:   number[5],        // distribución: [#fl1, #fl2, #fl3, #fl4, #fl5]
+  dist:   number[4],        // distribución: [#fl1, #fl2, #fl3, #fl4]
   totSyl: number,           // total de sílabas del texto
   avg:    string,           // media de sílabas por frase (toFixed(1))
   nw:     number,           // número de palabras
   flesch: number,           // índice Flesch-Szigriszt (0–100)
+  flow:   number,           // flow score nPVI normalizado (0–100)
   vbt:    {                 // verbos por tipo
     indefinido3s: string[],
     indefinido:   string[],
@@ -557,4 +596,6 @@ Ninguna. El fichero funciona completamente offline excepto para:
 | `esc()` | Función de escape HTML (imprescindible antes de innerHTML) |
 | `sylCount()` | Contador de sílabas por palabra |
 | `segSyl()` | Suma de sílabas de un segmento |
-| `sylClass()` | Cluster (1–5) dado un número de sílabas |
+| `sylClass()` | Cluster (1–4) dado un número de sílabas |
+| `flowScore()` | Flow score nPVI normalizado (0–100) |
+| `flowLabel()` | Etiqueta textual del flow score |
