@@ -29,8 +29,9 @@ Colorea cada frase según su número de sílabas:
 | Color | Rango | Lectura |
 |---|---|---|
 | Verde | 1–6 sílabas | Muy corta, impacto máximo |
-| Naranja | 7–20 sílabas | Corta a media |
-| Magenta | 21–40 sílabas | Larga, exige atención |
+| Amarillo | 7–15 sílabas | Corta |
+| Naranja | 16–25 sílabas | Media |
+| Magenta | 26–40 sílabas | Larga, exige atención |
 | Rojo | 41+ sílabas | Muy larga, riesgo de pérdida |
 
 El panel lateral muestra la distribución con una barra y los recuentos por categoría.

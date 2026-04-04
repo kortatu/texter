@@ -43,10 +43,11 @@
   #textarea-input::placeholder { color:var(--ink3); font-style:italic; }
   .rendered-text { font-family:'Georgia',serif; font-size:17px; line-height:1.95; color:var(--ink); }
 
-  .fl-1 { background:rgba(0,200,100,0.52); border-radius:2px; }
-  .fl-2 { background:rgba(255,120,0,0.50); border-radius:2px; }
-  .fl-3 { background:rgba(255,0,140,0.56); border-radius:2px; }
-  .fl-4 { background:rgba(200,0,30,0.58); border-radius:2px; }
+  .fl-1 { background:rgba(0,200,100,0.62); border-radius:2px; }
+  .fl-2 { background:rgba(210,190,0,0.65); border-radius:2px; }
+  .fl-3 { background:rgba(255,120,0,0.70); border-radius:2px; }
+  .fl-4 { background:rgba(255,0,140,0.66); border-radius:2px; }
+  .fl-5 { background:rgba(200,0,30,0.68); border-radius:2px; }
 
   .vm { border-radius:2px; padding:0 2px; cursor:default; position:relative; display:inline; }
   .vm:hover .tt { display:block; }
@@ -204,7 +205,7 @@ function sylCount(word) {
 }
 
 function segSyl(seg){ return seg.trim().split(/\s+/).filter(Boolean).reduce((s,w)=>s+sylCount(w),0); }
-function sylClass(n){ return n<=6?1:n<=20?2:n<=40?3:4; }
+function sylClass(n){ return n<=6?1:n<=15?2:n<=25?3:n<=40?4:5; }
 
 // Flow score (0–100): 80% nPVI (local rhythm) + 20% tanh(SD/16) (global range).
 // nPVI_raw = 100/(n-1) × Σ |d_i – d_{i+1}| / ((d_i + d_{i+1}) / 2)  → divide by 2 → 0–100
@@ -396,7 +397,7 @@ function analyze() {
   if (!text.trim()) return null;
   const sents = splitSentences(text);
   const syls = sents.map(segSyl);
-  const dist = [0,0,0,0]; syls.forEach(n=>dist[sylClass(n)-1]++);
+  const dist = [0,0,0,0,0]; syls.forEach(n=>dist[sylClass(n)-1]++);
   const words = text.split(/\s+/).filter(Boolean);
   const totSyl = words.reduce((s,w)=>s+sylCount(w),0);
   const avg = sents.length ? (totSyl/sents.length).toFixed(1) : 0;
@@ -423,9 +424,9 @@ function updateStats(){
   document.getElementById('st-flow').textContent=AD.flow+' · '+flowLabel(AD.flow);
 }
 
-const F_COLORS=['#00b850','#ff6a00','#e6007a','#c0001e'];
-const F_BGS=['rgba(0,200,100,0.32)','rgba(255,120,0,0.30)','rgba(255,0,140,0.26)','rgba(200,0,30,0.28)'];
-const F_LABELS=['1–6 síl','7–20 síl','21–40 síl','41+ síl'];
+const F_COLORS=['#00b850','#b8a800','#ff6a00','#e6007a','#c0001e'];
+const F_BGS=['rgba(0,200,100,0.32)','rgba(210,190,0,0.38)','rgba(255,120,0,0.30)','rgba(255,0,140,0.26)','rgba(200,0,30,0.28)'];
+const F_LABELS=['1–6 síl','7–15 síl','16–25 síl','26–40 síl','41+ síl'];
 
 function updateFrPanel(){
   if(!AD)return;
