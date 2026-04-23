@@ -161,7 +161,9 @@
     </div>
     <div class="sidebar-section" id="sec-ort">
       <h3>Ortografía y gramática</h3>
-      <div class="api-notice">Análisis mediante API de Claude</div>
+      <input id="api-key-input" type="password" placeholder="API key de Anthropic…"
+        oninput="localStorage.setItem('anthropic-api-key',this.value)"
+        style="width:100%;padding:5px 8px;margin-bottom:8px;font-family:sans-serif;font-size:11px;border:1px solid var(--border2);border-radius:4px;background:var(--bg);color:var(--ink);outline:none;">
       <button class="btn-analyze" id="btn-ort" onclick="runOrtografia()">Analizar texto</button>
       <div id="ort-result"><p class="empty-state">Aún no analizado</p></div>
     </div>
@@ -173,6 +175,8 @@ const SAMPLE = `Velilla entró en la habitación detrás de su bastón. A su esp
 const LS_KEY = 'analizador-texto';
 const ta = document.getElementById('textarea-input');
 ta.value = localStorage.getItem(LS_KEY) ?? SAMPLE;
+const storedKey = localStorage.getItem('anthropic-api-key');
+if(storedKey) document.getElementById('api-key-input').value = storedKey;
 let currentView = 'plain';
 let AD = null; // analysis data
 
@@ -525,8 +529,10 @@ async function runOrtografia(){
   const res=document.getElementById('ort-result');
   btn.disabled=true; btn.innerHTML='<span class="spinner"></span>Analizando…'; res.innerHTML='';
   try{
+    const apiKey=localStorage.getItem('anthropic-api-key')||'';
+    if(!apiKey){res.innerHTML='<p class="empty-state">Introduce tu API key de Anthropic.</p>';return;}
     const r=await fetch('https://api.anthropic.com/v1/messages',{
-      method:'POST',headers:{'Content-Type':'application/json'},
+      method:'POST',headers:{'Content-Type':'application/json','x-api-key':apiKey,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
       body:JSON.stringify({
         model:'claude-sonnet-4-20250514',max_tokens:1000,
         system:`Eres un corrector de estilo literario en castellano. Analiza el texto e identifica: errores ortográficos, gramaticales, de concordancia, de puntuación, y repetición léxica excesiva en proximidad.

@@ -85,7 +85,15 @@ El botón **Analizar texto** envía el texto a la API de Claude para un análisi
 - Problemas de concordancia (género, número).
 - Repeticiones léxicas cercanas.
 
-Esta función requiere conexión a internet y que el entorno tenga acceso a la API de Anthropic (funciona directamente desde Claude.ai; en otros navegadores puede requerir configuración adicional).
+Esta función requiere conexión a internet y una API key de Anthropic.
+
+#### Cómo configurar la API key
+
+1. Obtén tu API key en [console.anthropic.com/settings/keys](https://console.anthropic.com/settings/keys) (requiere cuenta gratuita en Anthropic).
+2. Pégala en el campo que aparece en el panel lateral, bajo el título "Ortografía y gramática".
+3. La key se guarda en el navegador (localStorage) y se recupera automáticamente en recargas. No se envía a ningún servidor propio: va directamente desde tu navegador a la API de Anthropic.
+
+> Cada llamada consume tokens de tu cuenta. Un análisis típico de un párrafo cuesta menos de 0,01 USD con el modelo Sonnet.
 
 ## Limitaciones conocidas
 
@@ -96,4 +104,4 @@ Esta función requiere conexión a internet y que el entorno tenga acceso a la A
 ## Requisitos
 
 - Navegador moderno con soporte de ES2020+ (Chrome 85+, Firefox 79+, Safari 14+, Edge 85+).
-- Conexión a internet solo para el análisis ortográfico.
+- Conexión a internet y API key de Anthropic solo para el análisis ortográfico.
